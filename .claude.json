@@ -1,0 +1,28 @@
+{
+  "projects": {
+    "/mnt/c/hackathon-Book2026": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {
+        "context7": {
+          "type": "http",
+          "url": "https://mcp.context7.com/mcp",
+          "headers": {
+            "CONTEXT7_API_KEY": "ctx7sk-6c517167-a2ad-403d-823f-e1e6315e42e2"
+          }
+        },
+        "github": {
+          "type": "stdio",
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-github"],
+          "env": {
+            "GITHUB_PERSONAL_ACCESS_TOKEN": "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"
+          }
+        }
+      },
+      "enabledMcpjsonServers": ["context7", "github"],
+      "disabledMcpjsonServers": [],
+      "autoUpdatesProtectedForNative": true
+    }
+  }
+}

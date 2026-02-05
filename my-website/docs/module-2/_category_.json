@@ -1,0 +1,8 @@
+{
+  "label": "Module 2: Digital Twin",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Weeks 6-7: Master robot simulation with Gazebo and Unity, including physics, sensors, and sim-to-real workflows."
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/chapter-frontmatter.schema.json",
+  "title": "Chapter Frontmatter Schema",
+  "description": "JSON Schema for validating Docusaurus chapter frontmatter in the Physical AI textbook",
+  "type": "object",
+  "required": [
+    "sidebar_position",
+    "title",
+    "sidebar_label",
+    "description",
+    "keywords",
+    "estimated_time",
+    "learning_objectives"
+  ],
+  "properties": {
+    "sidebar_position": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Order of the page in the sidebar navigation"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 100,
+      "description": "Full page title displayed in browser tab and heading"
+    },
+    "sidebar_label": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 40,
+      "description": "Shorter label for sidebar display"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 50,
+      "maxLength": 300,
+      "description": "SEO meta description and preview text"
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 30
+      },
+      "minItems": 3,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "description": "Search optimization keywords"
+    },
+    "estimated_time": {
+      "type": "string",
+      "pattern": "^[0-9]+ (minutes?|hours?)$",
+      "description": "Expected time to complete (e.g., '30 minutes', '1 hour')"
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+$"
+      },
+      "uniqueItems": true,
+      "description": "Chapter IDs that should be completed before this chapter"
+    },
+    "learning_objectives": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 200
+      },
+      "minItems": 2,
+      "maxItems": 6,
+      "description": "Specific outcomes students will achieve"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^/[a-z0-9/-]+$",
+      "description": "Custom URL path (optional, auto-generated from filename if omitted)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Content tags for filtering (optional)"
+    },
+    "hide_table_of_contents": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the right-side TOC"
+    },
+    "draft": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mark page as draft (excluded from production build)"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "sidebar_position": 3,
+      "title": "Core Concepts: Nodes, Topics, Services, and Actions",
+      "sidebar_label": "Core Concepts",
+      "description": "Master the fundamental building blocks of ROS 2: nodes for computation, topics for streaming data, services for request-response, and actions for long-running tasks.",
+      "keywords": ["ros2", "nodes", "topics", "services", "actions", "pub-sub"],
+      "estimated_time": "45 minutes",
+      "prerequisites": ["installation"],
+      "learning_objectives": [
+        "Explain the ROS 2 computational graph model",
+        "Create and run ROS 2 nodes using Python",
+        "Implement publishers and subscribers for topic communication",
+        "Use services for synchronous request-response patterns"
+      ]
+    }
+  ]
+}
