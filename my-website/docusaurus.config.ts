@@ -58,6 +58,13 @@ const config: Config = {
         indexBlog: false,
       },
     ],
+    [
+      './plugins/validate-frontmatter.ts',
+      {
+        schemaPath: 'specs/001-book-master-plan/contracts/frontmatter-schema.json',
+        strict: false,
+      },
+    ],
   ],
 
   themeConfig: {

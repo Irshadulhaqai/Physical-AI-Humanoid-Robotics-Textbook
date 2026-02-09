@@ -14,7 +14,20 @@ learning_objectives:
   - "Understand when to use actions for long-running tasks"
 ---
 
-# Core Concepts: Nodes, Topics, Services, and Actions
+**Estimated Time**: 45 minutes
+
+:::info[What You'll Learn]
+- Explain the ROS 2 computational graph model
+- Create and run ROS 2 nodes using Python
+- Implement publishers and subscribers for topic communication
+- Use services for synchronous request-response patterns
+- Understand when to use actions for long-running tasks
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [ROS 2 Jazzy Installation](./installation.md)
+:::
 
 ROS 2 organizes robot software as a graph of communicating processes. Understanding these four communication patterns is essential for building any robot system.
 
@@ -52,13 +65,14 @@ A **node** is a single-purpose process that performs one job in the robot system
 
 ### Creating a Node
 
-```python
+```python title="my_node.py" showLineNumbers
 import rclpy
 from rclpy.node import Node
 
 class MyNode(Node):
     def __init__(self):
         super().__init__('my_node')
+        # highlight-next-line
         self.get_logger().info('Node started!')
 
 def main(args=None):
@@ -74,7 +88,7 @@ if __name__ == '__main__':
 
 ### Running Nodes
 
-```bash
+```bash title="Node management commands" showLineNumbers
 # Run a node from a package
 ros2 run my_package my_node
 
@@ -91,6 +105,10 @@ ros2 node info /my_node
 - **Composable**: Nodes can be combined in different configurations
 - **Lifecycle**: Nodes can be managed (configure, activate, deactivate, shutdown)
 
+:::tip[Pro Tip]
+Use `ros2 node info /node_name` to inspect a running node's publishers, subscribers, services, and actions — this is invaluable for debugging communication issues.
+:::
+
 ## Topics
 
 **Topics** provide asynchronous, many-to-many publish-subscribe communication. Data flows continuously from publishers to subscribers.
@@ -103,12 +121,13 @@ ros2 node info /my_node
 
 ### Publisher
 
-```python
+```python title="minimal_publisher.py" showLineNumbers
 from std_msgs.msg import String
 
 class MinimalPublisher(Node):
     def __init__(self):
         super().__init__('minimal_publisher')
+        # highlight-next-line
         self.publisher_ = self.create_publisher(String, 'topic', 10)
         timer_period = 0.5  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -124,12 +143,13 @@ class MinimalPublisher(Node):
 
 ### Subscriber
 
-```python
+```python title="minimal_subscriber.py" showLineNumbers
 from std_msgs.msg import String
 
 class MinimalSubscriber(Node):
     def __init__(self):
         super().__init__('minimal_subscriber')
+        # highlight-next-line
         self.subscription = self.create_subscription(
             String, 'topic', self.listener_callback, 10)
 
@@ -139,7 +159,7 @@ class MinimalSubscriber(Node):
 
 ### Topic Commands
 
-```bash
+```bash title="Topic inspection commands" showLineNumbers
 # List all active topics
 ros2 topic list
 
@@ -168,15 +188,20 @@ QoS profiles control reliability and delivery guarantees:
 | Parameters | Reliable | Transient Local | Configuration values |
 | Services | Reliable | Volatile | Request-response |
 
-```python
+```python title="qos_configuration.py" showLineNumbers
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 
 sensor_qos = QoSProfile(
     depth=10,
+    # highlight-next-line
     reliability=ReliabilityPolicy.BEST_EFFORT
 )
 self.create_subscription(Image, '/camera/image', self.callback, sensor_qos)
 ```
+
+:::warning[Common Mistake]
+Using `RELIABLE` QoS for high-frequency sensor data (cameras, LiDAR) can cause message backlog and latency. Use `BEST_EFFORT` for sensor streams where occasional dropped messages are acceptable.
+:::
 
 ## Services
 
@@ -190,12 +215,13 @@ self.create_subscription(Image, '/camera/image', self.callback, sensor_qos)
 
 ### Service Server
 
-```python
+```python title="minimal_service.py" showLineNumbers
 from example_interfaces.srv import AddTwoInts
 
 class MinimalService(Node):
     def __init__(self):
         super().__init__('minimal_service')
+        # highlight-next-line
         self.srv = self.create_service(
             AddTwoInts, 'add_two_ints', self.add_callback)
 
@@ -207,13 +233,14 @@ class MinimalService(Node):
 
 ### Service Client
 
-```python
+```python title="minimal_client.py" showLineNumbers
 from example_interfaces.srv import AddTwoInts
 
 class MinimalClient(Node):
     def __init__(self):
         super().__init__('minimal_client')
         self.cli = self.create_client(AddTwoInts, 'add_two_ints')
+        # highlight-next-line
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Waiting for service...')
 
@@ -227,7 +254,7 @@ class MinimalClient(Node):
 
 ### Service Commands
 
-```bash
+```bash title="Service commands" showLineNumbers
 # List services
 ros2 service list
 
@@ -262,13 +289,14 @@ sequenceDiagram
 
 ### Action Server
 
-```python
+```python title="fibonacci_action_server.py" showLineNumbers
 from example_interfaces.action import Fibonacci
 from rclpy.action import ActionServer
 
 class FibonacciActionServer(Node):
     def __init__(self):
         super().__init__('fibonacci_server')
+        # highlight-next-line
         self._action_server = ActionServer(
             self, Fibonacci, 'fibonacci',
             self.execute_callback)
@@ -282,6 +310,7 @@ class FibonacciActionServer(Node):
             feedback_msg.partial_sequence.append(
                 feedback_msg.partial_sequence[i]
                 + feedback_msg.partial_sequence[i-1])
+            # highlight-next-line
             goal_handle.publish_feedback(feedback_msg)
 
         goal_handle.succeed()
@@ -292,7 +321,7 @@ class FibonacciActionServer(Node):
 
 ### Action Client
 
-```python
+```python title="fibonacci_action_client.py" showLineNumbers
 from example_interfaces.action import Fibonacci
 from rclpy.action import ActionClient
 
@@ -306,6 +335,7 @@ class FibonacciActionClient(Node):
         goal_msg = Fibonacci.Goal()
         goal_msg.order = order
         self._action_client.wait_for_server()
+        # highlight-next-line
         self._send_goal_future = self._action_client.send_goal_async(
             goal_msg, feedback_callback=self.feedback_callback)
 
@@ -337,6 +367,17 @@ flowchart LR
 3. **Tracker Node** tracks objects across frames
 4. **Planner Node** sends navigation goals via action client
 
+:::tip[Key Takeaways]
+- ROS 2 organizes software as a computational graph of communicating nodes
+- **Topics** are for continuous, many-to-many data streams (sensors, state)
+- **Services** are for quick, one-time request-response operations
+- **Actions** are for long-running tasks that need feedback and cancellation
+- Choose QoS profiles carefully — `BEST_EFFORT` for sensors, `RELIABLE` for critical commands
+- Each node should have a single responsibility for composability and reuse
+:::
+
 ## Next Steps
 
-Now that you understand the communication patterns, continue to [Building Packages](./building-packages.md) to learn how to organize your code into reusable ROS 2 packages.
+Continue your learning journey:
+- [Building Packages](./building-packages.md) — learn how to organize your code into reusable ROS 2 packages
+- [Python Agents](./python-agents.md) — build intelligent agent nodes that combine these communication patterns
