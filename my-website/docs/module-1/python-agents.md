@@ -14,7 +14,21 @@ learning_objectives:
   - "Apply lifecycle management patterns"
 ---
 
-# Python Agents with rclpy
+**Estimated Time**: 50 minutes
+
+:::info[What You'll Learn]
+- Build complete ROS 2 nodes using rclpy
+- Implement multi-topic publishers and subscribers
+- Use timers and callbacks for periodic processing
+- Handle parameters and configuration in Python nodes
+- Apply lifecycle management patterns
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Core Concepts](./core-concepts.md)
+- [Building Packages](./building-packages.md)
+:::
 
 `rclpy` is the Python client library for ROS 2. It provides a Pythonic API for creating nodes, publishing and subscribing to topics, calling services, and managing actions.
 
@@ -35,7 +49,7 @@ Let's build a perception agent that processes camera images and publishes detect
 
 ### Project Structure
 
-```
+```text title="Package layout"
 my_robot_perception/
 ├── package.xml
 ├── setup.py
@@ -55,7 +69,7 @@ my_robot_perception/
 
 ### Camera Processor Node
 
-```python
+```python title="camera_processor.py" showLineNumbers
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -78,6 +92,7 @@ class CameraProcessor(Node):
         input_topic = self.get_parameter('input_topic').value
         output_topic = self.get_parameter('output_topic').value
 
+        # highlight-next-line
         # Create subscriber
         self.subscription = self.create_subscription(
             Image, input_topic, self.image_callback, 10)
@@ -128,7 +143,7 @@ if __name__ == '__main__':
 
 Real robot agents often subscribe to multiple topics and coordinate data.
 
-```python
+```python title="navigation_agent.py" showLineNumbers
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan, Imu
 from geometry_msgs.msg import Twist
@@ -147,6 +162,7 @@ class NavigationAgent(Node):
             Imu, '/imu/data', self.imu_callback, 10)
 
         # Publisher for velocity commands
+        # highlight-next-line
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
         # Internal state
@@ -168,6 +184,7 @@ class NavigationAgent(Node):
             return
 
         twist = Twist()
+        # highlight-next-line
         min_range = min(self.latest_scan.ranges)
 
         if min_range < 0.5:
@@ -182,16 +199,21 @@ class NavigationAgent(Node):
         self.cmd_pub.publish(twist)
 ```
 
+:::tip[Pro Tip]
+Use `message_filters.ApproximateTimeSynchronizer` when you need to process messages from multiple topics that arrive at slightly different times — it automatically pairs messages with close timestamps.
+:::
+
 ## Timers and Callbacks
 
 ### Periodic Tasks
 
-```python
+```python title="periodic_node.py" showLineNumbers
 class PeriodicNode(Node):
     def __init__(self):
         super().__init__('periodic_node')
 
         # Fast timer for control (100 Hz)
+        # highlight-next-line
         self.control_timer = self.create_timer(0.01, self.control_cb)
 
         # Slow timer for diagnostics (1 Hz)
@@ -208,18 +230,19 @@ class PeriodicNode(Node):
 
 ### One-Shot Timers
 
-```python
+```python title="one_shot_timer.py"
 # Execute once after a delay
 self.one_shot = self.create_timer(5.0, self.delayed_init)
 
 def delayed_init(self):
     self.get_logger().info('Delayed initialization complete')
+    # highlight-next-line
     self.one_shot.cancel()  # Cancel after first execution
 ```
 
 ## Error Handling
 
-```python
+```python title="robust_node.py" showLineNumbers
 class RobustNode(Node):
     def __init__(self):
         super().__init__('robust_node')
@@ -227,6 +250,7 @@ class RobustNode(Node):
             Image, '/camera/image', self.image_callback, 10)
 
     def image_callback(self, msg):
+        # highlight-next-line
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
             self.process_image(cv_image)
@@ -241,11 +265,15 @@ class RobustNode(Node):
         # Processing logic here
 ```
 
+:::warning[Common Mistake]
+Never let exceptions propagate out of callbacks — an unhandled exception in a callback will crash the entire node. Always wrap callback logic in try/except blocks.
+:::
+
 ## Executors and Callback Groups
 
 For concurrent processing, use executors and callback groups.
 
-```python
+```python title="concurrent_node.py" showLineNumbers
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import (
     MutuallyExclusiveCallbackGroup,
@@ -257,6 +285,7 @@ class ConcurrentNode(Node):
         super().__init__('concurrent_node')
 
         # Separate callback groups for concurrent execution
+        # highlight-next-line
         self.sensor_group = ReentrantCallbackGroup()
         self.control_group = MutuallyExclusiveCallbackGroup()
 
@@ -276,17 +305,21 @@ executor.add_node(ConcurrentNode())
 executor.spin()
 ```
 
+:::info[Key Insight]
+`ReentrantCallbackGroup` allows callbacks to run in parallel, while `MutuallyExclusiveCallbackGroup` ensures only one callback runs at a time. Use reentrant for independent sensor callbacks and mutually exclusive for control logic that must not overlap.
+:::
+
 ## Composable Nodes
 
 Run multiple nodes in a single process for lower overhead.
 
-```python
-# launch/composed.launch.py
+```python title="launch/composed.launch.py" showLineNumbers
 from launch import LaunchDescription
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
 def generate_launch_description():
+    # highlight-next-line
     container = ComposableNodeContainer(
         name='perception_container',
         namespace='',
@@ -308,7 +341,7 @@ def generate_launch_description():
 
 ## Logging
 
-```python
+```python title="logging_examples.py" showLineNumbers
 # Log levels
 self.get_logger().debug('Detailed debug info')
 self.get_logger().info('Normal operation message')
@@ -316,14 +349,14 @@ self.get_logger().warn('Something unexpected')
 self.get_logger().error('Operation failed')
 self.get_logger().fatal('System cannot continue')
 
+# highlight-next-line
 # Throttled logging (once per 5 seconds)
 self.get_logger().info('Heartbeat', throttle_duration_sec=5.0)
 ```
 
 ## Testing Python Nodes
 
-```python
-# test/test_camera_processor.py
+```python title="test/test_camera_processor.py" showLineNumbers
 import pytest
 import rclpy
 from my_robot_pkg.camera_processor import CameraProcessor
@@ -337,6 +370,7 @@ def node():
     rclpy.shutdown()
 
 def test_node_creation(node):
+    # highlight-next-line
     assert node.get_name() == 'camera_processor'
 
 def test_publisher_created(node):
@@ -344,6 +378,16 @@ def test_publisher_created(node):
     assert '/camera/analysis' in topic_names
 ```
 
+:::tip[Key Takeaways]
+- `rclpy` provides the Python API for creating ROS 2 nodes with publishers, subscribers, timers, and services
+- Use `declare_parameter()` and `get_parameter()` for configurable node behavior
+- Combine multiple subscribers with a control loop timer for multi-sensor fusion
+- Use `MultiThreadedExecutor` with callback groups for concurrent processing
+- Always wrap callback logic in try/except to prevent node crashes
+- Use throttled logging to avoid flooding the console in high-frequency callbacks
+:::
+
 ## Next Steps
 
-Continue to [URDF Basics](./urdf-basics.md) to learn how to describe robot models that your agents will control.
+- [URDF Basics](./urdf-basics.md) — describe robot models that your agents will control
+- [Module 1 Exercises](./exercises.md) — practice building ROS 2 agents hands-on

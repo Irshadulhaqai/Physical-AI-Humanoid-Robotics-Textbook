@@ -14,7 +14,20 @@ learning_objectives:
   - "Use Xacro macros to simplify complex robot descriptions"
 ---
 
-# URDF: Robot Description Format
+**Estimated Time**: 45 minutes
+
+:::info[What You'll Learn]
+- Write URDF files that define robot structure
+- Configure links with visual, collision, and inertial properties
+- Define joints connecting robot parts with appropriate types
+- Visualize robot models in rviz2
+- Use Xacro macros to simplify complex robot descriptions
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Core Concepts](./core-concepts.md)
+:::
 
 URDF (Unified Robot Description Format) is the standard XML format for describing robot models in ROS. It defines the physical structure, appearance, and kinematics of a robot.
 
@@ -37,11 +50,12 @@ flowchart TB
 
 ### Minimal Robot
 
-```xml
+```xml title="simple_robot.urdf" showLineNumbers
 <?xml version="1.0"?>
 <robot name="simple_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Base Link -->
+  <!-- highlight-next-line -->
   <link name="base_link">
     <visual>
       <geometry>
@@ -89,6 +103,7 @@ flowchart TB
   </link>
 
   <!-- Joint connecting base to arm -->
+  <!-- highlight-next-line -->
   <joint name="arm_joint" type="revolute">
     <parent link="base_link"/>
     <child link="arm_link"/>
@@ -108,7 +123,7 @@ A link defines a rigid body with three properties:
 
 How the link appears in visualization tools.
 
-```xml
+```xml title="Visual geometry options"
 <visual>
   <geometry>
     <!-- Primitive shapes -->
@@ -129,7 +144,7 @@ How the link appears in visualization tools.
 
 Simplified geometry for physics simulation (often simpler than visual).
 
-```xml
+```xml title="Collision geometry"
 <collision>
   <geometry>
     <box size="0.4 0.3 0.1"/>
@@ -142,7 +157,7 @@ Simplified geometry for physics simulation (often simpler than visual).
 
 Mass and moment of inertia for dynamics simulation.
 
-```xml
+```xml title="Inertial properties"
 <inertial>
   <mass value="5.0"/>
   <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -150,6 +165,10 @@ Mass and moment of inertia for dynamics simulation.
            iyy="0.01" iyz="0.0" izz="0.01"/>
 </inertial>
 ```
+
+:::warning[Common Mistake]
+Always include `<inertial>` properties for every link that participates in physics simulation. Missing inertial values cause Gazebo to treat the link as having zero mass, which leads to unstable physics behavior.
+:::
 
 ## Joints
 
@@ -168,7 +187,8 @@ Joints connect links and define how they move relative to each other.
 
 ### Joint Definition
 
-```xml
+```xml title="Revolute joint example" showLineNumbers
+<!-- highlight-next-line -->
 <joint name="shoulder_joint" type="revolute">
   <parent link="torso_link"/>
   <child link="upper_arm_link"/>
@@ -203,7 +223,7 @@ flowchart TB
 
 ### Publishing Robot State
 
-```python
+```python title="joint_state_publisher.py" showLineNumbers
 from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
 
@@ -216,6 +236,7 @@ class JointStatePublisher(Node):
 
     def publish_state(self):
         msg = JointState()
+        # highlight-next-line
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name = ['shoulder_joint', 'elbow_joint']
         msg.position = [0.5, -0.3]
@@ -226,7 +247,7 @@ class JointStatePublisher(Node):
 
 ### Viewing Transforms
 
-```bash
+```bash title="TF2 inspection commands"
 # View the TF tree
 ros2 run tf2_tools view_frames
 
@@ -234,13 +255,18 @@ ros2 run tf2_tools view_frames
 ros2 run tf2_ros tf2_echo base_link head_link
 ```
 
+:::tip[Pro Tip]
+Run `ros2 run tf2_tools view_frames` to generate a PDF of the complete transform tree. This is invaluable for debugging coordinate frame issues in complex robot models.
+:::
+
 ## Xacro: XML Macros
 
 Xacro simplifies URDF files with variables, macros, and includes.
 
 ### Variables and Math
 
-```xml
+```xml title="Xacro properties" showLineNumbers
+<!-- highlight-next-line -->
 <xacro:property name="arm_length" value="0.4"/>
 <xacro:property name="arm_radius" value="0.05"/>
 <xacro:property name="arm_mass" value="1.0"/>
@@ -257,8 +283,9 @@ Xacro simplifies URDF files with variables, macros, and includes.
 
 ### Macros
 
-```xml
+```xml title="Reusable arm macro" showLineNumbers
 <!-- Define a reusable arm macro -->
+<!-- highlight-next-line -->
 <xacro:macro name="arm" params="prefix side reflect">
   <link name="${prefix}_arm_link">
     <visual>
@@ -283,7 +310,7 @@ Xacro simplifies URDF files with variables, macros, and includes.
 
 ### Processing Xacro
 
-```bash
+```bash title="Xacro conversion and validation"
 # Convert xacro to URDF
 xacro my_robot.urdf.xacro > my_robot.urdf
 
@@ -293,7 +320,7 @@ check_urdf my_robot.urdf
 
 ## Visualizing in rviz2
 
-```bash
+```bash title="Launch rviz2 with robot model"
 # Launch rviz2 with robot model
 ros2 launch my_robot_description display.launch.py
 
@@ -303,8 +330,7 @@ rviz2 -d config/robot_view.rviz
 
 ### Display Launch File
 
-```python
-# launch/display.launch.py
+```python title="launch/display.launch.py" showLineNumbers
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import Command
@@ -317,6 +343,7 @@ def generate_launch_description():
         'urdf', 'my_robot.urdf.xacro')
 
     return LaunchDescription([
+        # highlight-next-line
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
@@ -335,13 +362,14 @@ def generate_launch_description():
 
 ## Adding Sensors to URDF
 
-```xml
+```xml title="Sensor attachments" showLineNumbers
 <!-- Camera sensor -->
 <link name="camera_link">
   <visual>
     <geometry><box size="0.02 0.05 0.02"/></geometry>
   </visual>
 </link>
+<!-- highlight-next-line -->
 <joint name="camera_joint" type="fixed">
   <parent link="head_link"/>
   <child link="camera_link"/>
@@ -361,6 +389,15 @@ def generate_launch_description():
 </joint>
 ```
 
+:::tip[Key Takeaways]
+- URDF defines robot structure as a tree of links connected by joints
+- Each link has visual (appearance), collision (physics), and inertial (mass) properties
+- Joint types determine movement: revolute (rotation), continuous (wheel), prismatic (slide), fixed (sensor mount)
+- TF2 automatically tracks transforms between all links in the robot model
+- Xacro macros reduce duplication — define an arm once, instantiate it for left and right
+- Always validate with `check_urdf` and visualize in rviz2 before simulation
+:::
+
 ## Next Steps
 
-Practice what you've learned in the [Module 1 Exercises](./exercises.md) with hands-on challenges covering nodes, topics, packages, and URDF.
+- [Module 1 Exercises](./exercises.md) — hands-on challenges covering nodes, topics, packages, and URDF

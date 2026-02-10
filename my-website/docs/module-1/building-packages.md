@@ -13,7 +13,20 @@ learning_objectives:
   - "Configure setup.py and setup.cfg for Python packages"
 ---
 
-# Building ROS 2 Packages
+**Estimated Time**: 40 minutes
+
+:::info[What You'll Learn]
+- Create a new ROS 2 Python package from scratch
+- Understand the ament build system and package.xml metadata
+- Build packages with colcon and manage workspaces
+- Configure setup.py and setup.cfg for Python packages
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [ROS 2 Jazzy Installation](./installation.md)
+- [Core Concepts](./core-concepts.md)
+:::
 
 Packages are the fundamental unit of organization in ROS 2. Every node, message definition, and launch file lives inside a package.
 
@@ -29,18 +42,18 @@ This course focuses on Python packages (`ament_python`).
 
 ## Creating a Workspace
 
-```bash
-# Create workspace directory
+```bash title="Create workspace directory"
 mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws
 ```
 
 ## Creating a Python Package
 
-```bash
+```bash title="Create a new Python package" showLineNumbers
 cd ~/ros2_ws/src
 
 # Create a new Python package
+# highlight-next-line
 ros2 pkg create --build-type ament_python --node-name my_node my_robot_pkg
 
 # Package structure created:
@@ -65,7 +78,7 @@ ros2 pkg create --build-type ament_python --node-name my_node my_robot_pkg
 
 The manifest file defines package metadata and dependencies.
 
-```xml
+```xml title="package.xml" showLineNumbers
 <?xml version="1.0"?>
 <package format="3">
   <name>my_robot_pkg</name>
@@ -75,6 +88,7 @@ The manifest file defines package metadata and dependencies.
   <license>Apache-2.0</license>
 
   <!-- Build dependencies -->
+  <!-- highlight-next-line -->
   <buildtool_depend>ament_python</buildtool_depend>
 
   <!-- Runtime dependencies -->
@@ -98,7 +112,7 @@ The manifest file defines package metadata and dependencies.
 
 ### setup.py
 
-```python
+```python title="setup.py" showLineNumbers
 from setuptools import find_packages, setup
 
 package_name = 'my_robot_pkg'
@@ -125,18 +139,24 @@ setup(
     description='My robot perception package',
     license='Apache-2.0',
     tests_require=['pytest'],
+    # highlight-start
     entry_points={
         'console_scripts': [
             'camera_node = my_robot_pkg.camera_node:main',
             'detector_node = my_robot_pkg.detector_node:main',
         ],
     },
+    # highlight-end
 )
 ```
 
+:::tip[Pro Tip]
+The `entry_points` section maps executable names to Python functions. Each entry follows the format `executable_name = package.module:function`.
+:::
+
 ### setup.cfg
 
-```ini
+```ini title="setup.cfg"
 [develop]
 script_dir=$base/lib/my_robot_pkg
 
@@ -148,7 +168,7 @@ install_scripts=$base/lib/my_robot_pkg
 
 ### Using colcon
 
-```bash
+```bash title="Build with colcon" showLineNumbers
 cd ~/ros2_ws
 
 # Build all packages
@@ -158,6 +178,7 @@ colcon build
 colcon build --packages-select my_robot_pkg
 
 # Build with symlink install (faster iteration)
+# highlight-next-line
 colcon build --symlink-install
 
 # Source the workspace
@@ -166,7 +187,7 @@ source install/setup.bash
 
 ### Build Output
 
-```
+```text title="Workspace structure after build"
 ~/ros2_ws/
 ├── src/          # Source packages (your code)
 ├── build/        # Build artifacts (temporary)
@@ -176,7 +197,7 @@ source install/setup.bash
 
 ### Common Build Flags
 
-```bash
+```bash title="Useful colcon flags" showLineNumbers
 # Parallel build with limited jobs
 colcon build --parallel-workers 4
 
@@ -188,17 +209,21 @@ rm -rf build/ install/ log/
 colcon build
 ```
 
+:::warning[Common Mistake]
+Always run `source install/setup.bash` after building. Without it, ROS 2 cannot find your newly built packages, and `ros2 run` will fail with "package not found."
+:::
+
 ## Launch Files
 
 Launch files start multiple nodes with configured parameters.
 
-```python
-# launch/robot.launch.py
+```python title="launch/robot.launch.py" showLineNumbers
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
+        # highlight-next-line
         Node(
             package='my_robot_pkg',
             executable='camera_node',
@@ -220,8 +245,7 @@ def generate_launch_description():
     ])
 ```
 
-```bash
-# Run a launch file
+```bash title="Run a launch file"
 ros2 launch my_robot_pkg robot.launch.py
 ```
 
@@ -231,11 +255,12 @@ Parameters configure node behavior at runtime.
 
 ### Declaring Parameters
 
-```python
+```python title="configurable_node.py" showLineNumbers
 class ConfigurableNode(Node):
     def __init__(self):
         super().__init__('configurable_node')
         # Declare parameters with defaults
+        # highlight-next-line
         self.declare_parameter('update_rate', 10.0)
         self.declare_parameter('threshold', 0.5)
         self.declare_parameter('model_path', '/models/detector.onnx')
@@ -247,8 +272,7 @@ class ConfigurableNode(Node):
 
 ### Parameter Files (YAML)
 
-```yaml
-# config/params.yaml
+```yaml title="config/params.yaml"
 configurable_node:
   ros__parameters:
     update_rate: 30.0
@@ -258,11 +282,12 @@ configurable_node:
 
 ### Runtime Parameter Changes
 
-```bash
+```bash title="Parameter commands" showLineNumbers
 # Get a parameter
 ros2 param get /configurable_node threshold
 
 # Set a parameter at runtime
+# highlight-next-line
 ros2 param set /configurable_node threshold 0.9
 
 # Dump all parameters
@@ -273,7 +298,7 @@ ros2 param dump /configurable_node
 
 ### Finding Available Packages
 
-```bash
+```bash title="Package discovery commands"
 # List all installed packages
 ros2 pkg list
 
@@ -302,6 +327,15 @@ ros2 pkg executables my_robot_pkg
 4. **Use `--symlink-install`**: Faster iteration during development
 5. **Test your packages**: Include unit tests in the `test/` directory
 
+:::tip[Key Takeaways]
+- ROS 2 packages use `ament_python` (Python) or `ament_cmake` (C++) build systems
+- `package.xml` declares metadata and dependencies; `setup.py` configures entry points
+- Build with `colcon build --symlink-install` for fast iteration during development
+- Launch files coordinate multiple nodes with parameters and remappings
+- Always source `install/setup.bash` after building to make packages discoverable
+:::
+
 ## Next Steps
 
-With packages set up, continue to [Python Agents](./python-agents.md) to build full ROS 2 applications using rclpy.
+- [Python Agents](./python-agents.md) — build full ROS 2 applications using rclpy
+- [URDF Basics](./urdf-basics.md) — describe your robot's physical structure

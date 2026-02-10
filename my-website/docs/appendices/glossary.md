@@ -1,18 +1,32 @@
 ---
 sidebar_position: 2
-title: Glossary
-sidebar_label: Glossary
-description: Comprehensive glossary of 100+ technical terms for Physical AI, humanoid robotics, ROS 2, simulation, and AI-powered perception and planning.
+title: "Glossary"
+sidebar_label: "Glossary"
+description: "Comprehensive glossary of 110+ technical terms for Physical AI, humanoid robotics, ROS 2, simulation, and AI-powered perception and planning."
 keywords: [glossary, definitions, terminology, ros2, robotics, ai, isaac]
 estimated_time: "15 minutes"
+prerequisites: []
 learning_objectives:
   - "Look up unfamiliar terms encountered in the course"
   - "Understand acronyms and abbreviations used in robotics"
 ---
 
-# Glossary
+**Estimated Time**: 15 minutes
+
+:::info[What You'll Learn]
+- Look up unfamiliar terms encountered in the course
+- Understand acronyms and abbreviations used in robotics
+:::
+
+:::note[Prerequisites]
+No prerequisites -- use this glossary as a reference throughout the course.
+:::
 
 A comprehensive reference of technical terms used throughout this course, organized alphabetically.
+
+:::tip[How to Use This Glossary]
+Each term includes the module where it is primarily introduced. Use your browser's search (Ctrl+F) to quickly find specific terms.
+:::
 
 ---
 
@@ -50,7 +64,7 @@ An optimization technique in visual SLAM that refines the 3D positions of landma
 A prompting technique for LLMs where the model reasons step-by-step before generating a final answer. Used in cognitive planning. *Module 4*
 
 ### CAN Bus
-Controller Area Network — a communication protocol commonly used in robots for motor controllers and sensors. *Introduction*
+Controller Area Network -- a communication protocol commonly used in robots for motor controllers and sensors. *Introduction*
 
 ### colcon
 The build tool for ROS 2 workspaces. Builds packages in dependency order and manages the install space. *Module 1*
@@ -164,7 +178,7 @@ Computing the joint angles needed to place the end-effector at a desired positio
 A sensor combining accelerometer, gyroscope, and sometimes magnetometer to measure orientation and motion. *Introduction*
 
 ### Inertia (Moment of)
-A measure of an object's resistance to rotational acceleration, specified as a 3×3 tensor in URDF. *Module 2*
+A measure of an object's resistance to rotational acceleration, specified as a 3x3 tensor in URDF. *Module 2*
 
 ### Inflation Layer
 A costmap layer that adds a safety buffer around obstacles, preventing the robot from navigating too close. *Module 3*
@@ -256,13 +270,13 @@ A format for representing machine learning models, enabling interoperability bet
 ## P
 
 ### PD Controller
-Proportional-Derivative controller — a simple feedback controller used for joint-level position or velocity control. *Module 4*
+Proportional-Derivative controller -- a simple feedback controller used for joint-level position or velocity control. *Module 4*
 
 ### Physical AI
 AI systems designed to perceive, reason about, and act in the physical world through robotic embodiment. *Introduction*
 
 ### PID Controller
-Proportional-Integral-Derivative controller — extends PD with integral term to eliminate steady-state error. *Module 2*
+Proportional-Integral-Derivative controller -- extends PD with integral term to eliminate steady-state error. *Module 2*
 
 ### Point Cloud
 A set of 3D points representing surfaces in the environment, typically from LiDAR or depth cameras. *Module 3*
@@ -314,7 +328,7 @@ The abstraction layer in ROS 2 between the client library (rclpy/rclcpp) and the
 Middleware for building robot applications, providing tools for hardware abstraction, drivers, and inter-process communication. Jazzy is the current LTS. *Module 1*
 
 ### RT-DETR
-Real-Time Detection Transformer — an object detection model optimized for real-time inference. *Module 3*
+Real-Time Detection Transformer -- an object detection model optimized for real-time inference. *Module 3*
 
 ## S
 
@@ -379,7 +393,7 @@ AI models that combine visual perception, natural language understanding, and ac
 SLAM using camera images as the primary sensor input for localization and mapping. *Module 3*
 
 ### Voxel
-A 3D pixel — a unit cube in a 3D grid used for representing occupied space. *Module 3*
+A 3D pixel -- a unit cube in a 3D grid used for representing occupied space. *Module 3*
 
 ## W
 
@@ -413,3 +427,9 @@ The point on the ground where the total moment of active forces is zero. Critica
 ---
 
 *Total: 110+ terms covering all course modules.*
+
+:::tip[Key Takeaways]
+- This glossary covers 110+ terms across all four course modules plus the introduction
+- Each term includes the module where it is primarily introduced for easy cross-referencing
+- Use Ctrl+F to quickly search for specific terms while studying
+:::

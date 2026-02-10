@@ -13,7 +13,23 @@ learning_objectives:
   - "Create and visualize a custom robot model"
 ---
 
-# Module 1 Exercises: ROS 2 Practice
+**Estimated Time**: 90 minutes
+
+:::info[What You'll Learn]
+- Apply ROS 2 concepts through practical exercises
+- Build working ROS 2 nodes from specifications
+- Debug common ROS 2 communication issues
+- Create and visualize a custom robot model
+:::
+
+:::note[Prerequisites]
+Before starting these exercises, complete all Module 1 chapters:
+- [Installation](./installation.md)
+- [Core Concepts](./core-concepts.md)
+- [Building Packages](./building-packages.md)
+- [Python Agents](./python-agents.md)
+- [URDF Basics](./urdf-basics.md)
+:::
 
 These exercises reinforce the concepts from Module 1. Complete them in order, as each builds on the previous.
 
@@ -25,7 +41,7 @@ These exercises reinforce the concepts from Module 1. Complete them in order, as
 
 1. Open a terminal and verify ROS 2 is installed:
 
-```bash
+```bash title="Verify ROS 2 environment"
 # Check ROS 2 version
 ros2 --version
 
@@ -37,7 +53,7 @@ printenv | grep -i ROS
 
 2. Run the demo talker/listener:
 
-```bash
+```bash title="Run demo nodes"
 # Terminal 1
 ros2 run demo_nodes_cpp talker
 
@@ -67,8 +83,7 @@ ros2 run demo_nodes_cpp listener
 
 ### Starter Code
 
-```python
-# temp_sensor.py
+```python title="temp_sensor.py" showLineNumbers
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64
@@ -78,6 +93,7 @@ class TempSensor(Node):
     def __init__(self):
         super().__init__('temp_sensor')
         # TODO: Create a publisher for Float64 on '/temperature'
+        # highlight-next-line
         # TODO: Create a timer that fires at 2 Hz
         pass
 
@@ -95,8 +111,7 @@ def main(args=None):
     rclpy.shutdown()
 ```
 
-```python
-# temp_monitor.py
+```python title="temp_monitor.py" showLineNumbers
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64
@@ -104,6 +119,7 @@ from std_msgs.msg import Float64
 class TempMonitor(Node):
     def __init__(self):
         super().__init__('temp_monitor')
+        # highlight-next-line
         # TODO: Create a subscriber for Float64 on '/temperature'
         pass
 
@@ -115,7 +131,7 @@ class TempMonitor(Node):
 
 ### Expected Output
 
-```
+```text title="Expected output"
 [temp_sensor] Publishing temperature: 21.3°C
 [temp_sensor] Publishing temperature: 23.7°C
 [temp_sensor] Publishing temperature: 24.8°C
@@ -151,7 +167,7 @@ For simplicity, use `example_interfaces/srv/AddTwoInts` as a stand-in (request.a
 
 ### Conversion Formulas
 
-```python
+```python title="Temperature conversion"
 # Celsius to Fahrenheit
 fahrenheit = celsius * 9.0 / 5.0 + 32.0
 
@@ -184,10 +200,14 @@ flowchart LR
 
 1. **Sensor Node**: Publishes simulated `LaserScan` data at 10 Hz with random ranges (0.2-5.0m)
 2. **Decision Node**: Subscribes to `/scan`, publishes `Twist` on `/cmd_vel`:
-   - If minimum range < 0.5m → stop (linear.x = 0)
-   - If minimum range < 1.0m → slow (linear.x = 0.1)
+   - If minimum range &lt; 0.5m → stop (linear.x = 0)
+   - If minimum range &lt; 1.0m → slow (linear.x = 0.1)
    - Otherwise → full speed (linear.x = 0.5)
 3. **Motor Node**: Subscribes to `/cmd_vel` and logs the commanded velocity
+
+:::danger[Hardware Safety]
+These exercises use simulated data only. Never send velocity commands to a real robot without proper safety checks, emergency stop capability, and a clear workspace.
+:::
 
 ### Verification Checklist
 
@@ -212,7 +232,7 @@ Build a URDF for a robot with:
 
 ### Skeleton
 
-```xml
+```xml title="exercise_robot.urdf" showLineNumbers
 <?xml version="1.0"?>
 <robot name="exercise_robot">
   <!-- TODO: Base link with visual, collision, and inertial -->
@@ -223,6 +243,7 @@ Build a URDF for a robot with:
 
   <!-- TODO: Caster wheel link and fixed joint -->
 
+  <!-- highlight-next-line -->
   <!-- TODO: Camera link and fixed joint -->
 </robot>
 ```
@@ -260,7 +281,7 @@ Build a URDF for a robot with:
 
 ### Expected Behavior
 
-```
+```text title="Expected output"
 [patrol_node] Starting patrol: speed=0.3, turn_time=2.0s
 [patrol_node] Moving forward...
 [patrol_node] Turning...
@@ -289,6 +310,13 @@ After completing these exercises, you should be comfortable with:
 | Launch files | Challenge |
 | URDF modeling | 5 |
 
+:::tip[Key Takeaways]
+- ROS 2 nodes communicate via topics (pub/sub), services (request/response), and actions (long-running tasks)
+- Always verify your environment before starting development (`ros2 --version`, `printenv | grep ROS`)
+- Build incrementally — test each node independently before connecting them
+- Use `ros2 topic echo`, `ros2 node list`, and `ros2 service list` for debugging
+:::
+
 ## Next Steps
 
-With Module 1 complete, continue to [Module 2: Digital Twin](/docs/module-2/) to learn how to simulate your robot in Gazebo.
+- [Module 2: Digital Twin](../module-2/index.md) — simulate your robot in Gazebo and learn about physics simulation

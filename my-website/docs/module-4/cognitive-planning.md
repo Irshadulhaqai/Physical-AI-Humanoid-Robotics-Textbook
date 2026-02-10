@@ -13,7 +13,19 @@ learning_objectives:
   - "Handle plan failures with re-planning strategies"
 ---
 
-# LLM-Powered Cognitive Planning
+**Estimated Time**: 50 minutes
+
+:::info[What You'll Learn]
+- Understand how LLMs serve as cognitive planners for robots
+- Implement task decomposition from natural language to action sequences
+- Ground LLM plans in robot capabilities and environment state
+- Handle plan failures with re-planning strategies
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Voice-to-Action Pipeline](./voice-to-action.md)
+:::
 
 Large Language Models (LLMs) give robots the ability to understand complex natural language instructions and decompose them into executable action sequences. This chapter covers how to use LLMs as cognitive planners that bridge human intent and robot execution.
 
@@ -41,7 +53,8 @@ flowchart LR
 
 ### Basic Prompt Design
 
-```python
+```python title="planner_prompt.py" showLineNumbers
+# highlight-next-line
 PLANNER_PROMPT = """You are a robot task planner. Given a user instruction
 and the robot's available skills, decompose the instruction into a sequence
 of executable actions.
@@ -67,9 +80,13 @@ Output a JSON array of actions:
 """
 ```
 
+:::info[Prompt Engineering for Robotics]
+Effective robot planning prompts must enumerate the available skills, known locations, and known objects. This "grounding" prevents the LLM from hallucinating actions the robot cannot perform.
+:::
+
 ### Planning Node
 
-```python
+```python title="cognitive_planner_node.py" showLineNumbers
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -85,6 +102,7 @@ class CognitivePlanner(Node):
 
         self.instruction_sub = self.create_subscription(
             String, '/voice/instruction', self.plan_callback, 10)
+        # highlight-next-line
         self.plan_pub = self.create_publisher(
             String, '/planner/action_sequence', 10)
 
@@ -104,6 +122,7 @@ class CognitivePlanner(Node):
         # Call LLM API
         plan = self.call_llm(prompt)
 
+        # highlight-next-line
         # Validate plan against skill library
         validated_plan = self.validate_plan(plan)
 
@@ -132,13 +151,14 @@ class CognitivePlanner(Node):
 
 ### Environment State Tracking
 
-```python
+```python title="environment_state.py" showLineNumbers
 class EnvironmentState:
     """Track what the robot knows about the world."""
 
     def __init__(self):
         self.robot_location = 'unknown'
         self.held_object = None
+        # highlight-next-line
         self.known_objects = {}  # object -> location
         self.door_states = {}   # door -> open/closed
 
@@ -161,7 +181,7 @@ class EnvironmentState:
 
 ### Precondition Checking
 
-```python
+```python title="precondition_checker.py" showLineNumbers
 class PreconditionChecker:
     """Verify action preconditions before execution."""
 
@@ -170,6 +190,7 @@ class PreconditionChecker:
 
         if skill == 'pick':
             obj = action['params']['object']
+            # highlight-next-line
             if state.held_object is not None:
                 return False, f"Already holding {state.held_object}"
             if obj not in state.known_objects:
@@ -191,7 +212,7 @@ class PreconditionChecker:
 
 ### Action Executor
 
-```python
+```python title="plan_executor.py" showLineNumbers
 class PlanExecutor(Node):
     """Execute a sequence of planned actions."""
 
@@ -226,6 +247,7 @@ class PlanExecutor(Node):
                 self.publish_status(f'Unknown skill: {skill_name}')
                 break
 
+            # highlight-next-line
             success = await skill_fn(**params)
             if not success:
                 self.publish_status(
@@ -251,7 +273,7 @@ flowchart TB
     G -->|No| H[Plan Complete]
 ```
 
-```python
+```python title="replan_prompt.py" showLineNumbers
 REPLAN_PROMPT = """The robot was executing a plan but step {step_num} failed.
 
 Original instruction: {instruction}
@@ -269,13 +291,14 @@ the current state. Use the same skill format.
 
 For complex tasks, use chain-of-thought reasoning:
 
-```python
+```python title="chain_of_thought_prompt.py" showLineNumbers
 COT_PROMPT = """Think step by step about how to accomplish this task.
 
 Task: {instruction}
 Robot capabilities: {skills}
 Environment: {state}
 
+# highlight-next-line
 First, reason about what needs to happen:
 1. What is the goal state?
 2. What is the current state?
@@ -288,10 +311,11 @@ Then output the action plan as JSON.
 
 ## Safety Constraints
 
-```python
+```python title="safety_filter.py" showLineNumbers
 class SafetyFilter:
     """Filter unsafe actions from LLM-generated plans."""
 
+    # highlight-next-line
     FORBIDDEN_ACTIONS = [
         'throw', 'break', 'force', 'override_safety'
     ]
@@ -318,6 +342,18 @@ class SafetyFilter:
                 return False
         return True
 ```
+
+:::warning[LLM Hallucination in Plans]
+LLMs may generate actions that reference skills or objects the robot does not have. Always validate generated plans against the skill library and known environment state before execution. The `SafetyFilter` and `PreconditionChecker` classes shown above are essential safeguards.
+:::
+
+:::tip[Key Takeaways]
+- LLMs excel at decomposing natural language into structured action sequences
+- Grounding plans in a skill library prevents hallucinated actions
+- Precondition checking catches invalid actions before execution
+- Re-planning on failure enables robust task completion
+- Safety filters enforce force, speed, and action-type constraints
+:::
 
 ## Next Steps
 

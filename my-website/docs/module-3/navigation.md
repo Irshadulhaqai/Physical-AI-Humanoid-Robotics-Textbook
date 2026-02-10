@@ -13,13 +13,25 @@ learning_objectives:
   - "Use behavior trees for complex navigation scenarios"
 ---
 
-# Navigation with Nav2
+**Estimated Time**: 50 minutes
+
+:::info[What You'll Learn]
+- Configure Nav2 for autonomous robot navigation
+- Understand costmap layers and obstacle avoidance
+- Implement path planning with different planner algorithms
+- Use behavior trees for complex navigation scenarios
+:::
+
+:::note[Prerequisites]
+- [Isaac Sim Setup](./isaac-sim-setup.md) -- NVIDIA Isaac Sim installed and configured
+- [Perception](./perception.md) -- Understanding of perception pipelines for sensor data
+:::
 
 Nav2 (Navigation 2) is the ROS 2 navigation framework that enables autonomous robot movement. It handles path planning, obstacle avoidance, and recovery behaviors.
 
 ## Nav2 Architecture
 
-```mermaid
+```mermaid title="nav2_architecture_overview"
 flowchart TB
     A[Goal Pose] --> B[BT Navigator]
     B --> C[Planner Server]
@@ -38,20 +50,21 @@ flowchart TB
 
 ### Installation
 
-```bash
+```bash title="install_nav2_packages"
 # Install Nav2 packages
 sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
 ```
 
 ### Configuration
 
-```yaml
+```yaml title="nav2_params_yaml" showLineNumbers
 # config/nav2_params.yaml
 bt_navigator:
   ros__parameters:
     global_frame: map
     robot_base_frame: base_link
     odom_topic: /odom
+    # highlight-next-line
     default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
@@ -68,6 +81,7 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     FollowPath:
+      # highlight-next-line
       plugin: "dwb_core::DWBLocalPlanner"
       max_vel_x: 0.5
       min_vel_x: -0.1
@@ -91,7 +105,7 @@ planner_server:
 
 ### Launch Nav2
 
-```python
+```python title="navigation_launch_file" showLineNumbers
 # launch/navigation.launch.py
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
@@ -101,6 +115,7 @@ import os
 
 def generate_launch_description():
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    # highlight-next-line
     params_file = os.path.join(
         get_package_share_directory('my_robot_nav'),
         'config', 'nav2_params.yaml')
@@ -123,7 +138,7 @@ Costmaps represent the environment as a grid where each cell has a cost value in
 
 ### Costmap Layers
 
-```mermaid
+```mermaid title="costmap_layer_composition"
 flowchart TB
     A[Static Map Layer<br/>From SLAM] --> E[Combined Costmap]
     B[Obstacle Layer<br/>From LiDAR] --> E
@@ -141,7 +156,7 @@ flowchart TB
 
 ### Costmap Configuration
 
-```yaml
+```yaml title="costmap_configuration" showLineNumbers
 # Global costmap (for path planning)
 global_costmap:
   ros__parameters:
@@ -162,6 +177,7 @@ global_costmap:
         max_obstacle_height: 2.0
         clearing: true
         marking: true
+    # highlight-next-line
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
       cost_scaling_factor: 3.0
@@ -181,6 +197,10 @@ local_costmap:
     plugins: ["obstacle_layer", "inflation_layer"]
 ```
 
+:::info[Inflation Radius]
+The `inflation_radius` parameter controls the safety buffer around obstacles. A larger value keeps the robot farther from walls and obstacles but may make narrow passages impassable. Start with your robot's radius plus 5-10 cm and adjust based on testing.
+:::
+
 ## Path Planners
 
 ### Available Planners
@@ -194,13 +214,14 @@ local_costmap:
 
 ### Sending Navigation Goals
 
-```python
+```python title="navigation_goal_client" showLineNumbers
 from geometry_msgs.msg import PoseStamped
 from nav2_simple_commander.robot_navigator import BasicNavigator
 
 class NavigationClient(Node):
     def __init__(self):
         super().__init__('nav_client')
+        # highlight-next-line
         self.navigator = BasicNavigator()
 
     def go_to_pose(self, x, y, yaw):
@@ -213,6 +234,7 @@ class NavigationClient(Node):
         goal.pose.orientation.z = math.sin(yaw / 2.0)
         goal.pose.orientation.w = math.cos(yaw / 2.0)
 
+        # highlight-next-line
         self.navigator.goToPose(goal)
 
         while not self.navigator.isTaskComplete():
@@ -228,7 +250,7 @@ class NavigationClient(Node):
 
 ### Waypoint Following
 
-```python
+```python title="waypoint_following" showLineNumbers
 def follow_waypoints(self, waypoints):
     """Navigate through a sequence of waypoints."""
     goals = []
@@ -242,6 +264,7 @@ def follow_waypoints(self, waypoints):
         goal.pose.orientation.w = math.cos(yaw / 2.0)
         goals.append(goal)
 
+    # highlight-next-line
     self.navigator.followWaypoints(goals)
 ```
 
@@ -249,7 +272,7 @@ def follow_waypoints(self, waypoints):
 
 Nav2 uses behavior trees to manage complex navigation logic.
 
-```mermaid
+```mermaid title="nav2_behavior_tree"
 flowchart TB
     A[Root: Sequence] --> B[ComputePathToPose]
     A --> C[FollowPath]
@@ -263,10 +286,11 @@ flowchart TB
 
 ### Custom Behavior Tree
 
-```xml
+```xml title="navigate_with_recovery_bt" showLineNumbers
 <!-- bt/navigate_with_recovery.xml -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
+    <!-- highlight-next-line -->
     <RecoveryNode number_of_retries="3">
       <PipelineSequence>
         <ComputePathToPose goal="{goal}"
@@ -282,6 +306,7 @@ flowchart TB
                               service_name="/global_costmap/clear_entirely_global_costmap"/>
           <ClearEntireCostmap name="ClearLocalCostmap"
                               service_name="/local_costmap/clear_entirely_local_costmap"/>
+          <!-- highlight-next-line -->
           <Spin spin_dist="1.57"/>
           <Wait wait_duration="2"/>
           <BackUp backup_dist="0.3" backup_speed="0.05"/>
@@ -296,7 +321,7 @@ flowchart TB
 
 ### Simultaneous SLAM and Navigation
 
-```bash
+```bash title="launch_slam_and_nav2" showLineNumbers
 # Launch SLAM
 ros2 launch slam_toolbox online_async_launch.py \
   params_file:=config/slam_params.yaml use_sim_time:=true
@@ -305,13 +330,14 @@ ros2 launch slam_toolbox online_async_launch.py \
 ros2 launch nav2_bringup navigation_launch.py \
   params_file:=config/nav2_params.yaml use_sim_time:=true
 
+# highlight-next-line
 # Save map when done exploring
 ros2 run nav2_map_server map_saver_cli -f my_map
 ```
 
 ### Map Server
 
-```yaml
+```yaml title="map_server_config"
 # Load a pre-built map
 map_server:
   ros__parameters:
@@ -320,7 +346,7 @@ map_server:
 
 ## Debugging Navigation
 
-```bash
+```bash title="debug_navigation_commands" showLineNumbers
 # Visualize in rviz2 with Nav2 config
 ros2 launch nav2_bringup rviz_launch.py
 
@@ -330,9 +356,23 @@ ros2 topic echo /global_costmap/costmap
 # Monitor controller frequency
 ros2 topic hz /cmd_vel
 
+# highlight-next-line
 # Check TF tree for missing transforms
 ros2 run tf2_tools view_frames
 ```
+
+:::warning[Common TF Issues]
+Navigation failures are frequently caused by missing or incorrect TF transforms. Always verify that the `map -> odom -> base_link` transform chain is complete using `ros2 run tf2_tools view_frames`. A broken TF tree will cause Nav2 to reject goals silently.
+:::
+
+:::tip[Key Takeaways]
+- Nav2 provides a complete navigation stack with planning, control, and recovery behaviors
+- Costmaps combine static maps with real-time sensor data for obstacle avoidance
+- The inflation layer adds a safety buffer; tune `inflation_radius` based on your robot's footprint
+- Behavior trees enable flexible recovery strategies when navigation encounters obstacles
+- The `BasicNavigator` Python API simplifies sending goals and monitoring progress
+- Always verify the TF tree and costmap visualization before debugging path planning issues
+:::
 
 ## Next Steps
 

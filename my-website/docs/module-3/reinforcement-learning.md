@@ -13,13 +13,25 @@ learning_objectives:
   - "Evaluate and deploy trained policies"
 ---
 
-# Reinforcement Learning for Robotics
+**Estimated Time**: 60 minutes
+
+:::info[What You'll Learn]
+- Understand RL fundamentals applied to robotics
+- Configure parallel simulation environments in Isaac Sim
+- Train locomotion policies for humanoid robots
+- Evaluate and deploy trained policies
+:::
+
+:::note[Prerequisites]
+- [Isaac Sim Setup](./isaac-sim-setup.md) -- NVIDIA Isaac Sim installed and configured
+- [Perception](./perception.md) -- Understanding of sensor data processing
+:::
 
 Reinforcement Learning (RL) enables robots to learn behaviors through trial and error in simulation. NVIDIA Isaac Sim provides GPU-accelerated parallel environments that make RL training practical for complex robot tasks.
 
 ## RL Fundamentals for Robotics
 
-```mermaid
+```mermaid title="rl_training_loop"
 flowchart LR
     A[Environment<br/>Isaac Sim] -->|Observation| B[Policy Network<br/>Neural Network]
     B -->|Action| A
@@ -41,7 +53,7 @@ flowchart LR
 
 Isaac Sim can run thousands of robot instances simultaneously on GPU:
 
-```mermaid
+```mermaid title="parallel_environment_architecture"
 flowchart TB
     subgraph GPU["GPU (Single)"]
         E1[Env 1]
@@ -59,22 +71,27 @@ flowchart TB
 
 | Platform | Environments | Steps/sec | Speedup |
 |----------|-------------|-----------|---------|
-| CPU (single) | 1 | 60 | 1× |
-| CPU (multi) | 16 | 800 | 13× |
-| Isaac Sim (RTX 4090) | 4,096 | 200,000 | 3,333× |
-| Isaac Sim (H100) | 16,384 | 1,000,000 | 16,667× |
+| CPU (single) | 1 | 60 | 1x |
+| CPU (multi) | 16 | 800 | 13x |
+| Isaac Sim (RTX 4090) | 4,096 | 200,000 | 3,333x |
+| Isaac Sim (H100) | 16,384 | 1,000,000 | 16,667x |
+
+:::info[Why Parallel Environments Matter]
+Training a locomotion policy with a single environment would take weeks. Running 4,096 parallel environments on a single GPU provides over 3,000x speedup, reducing training time from weeks to hours. This is what makes RL practical for complex robotics tasks.
+:::
 
 ## Training Setup
 
 ### Task Definition
 
-```python
+```python title="humanoid_walk_task_config" showLineNumbers
 from omni.isaac.lab.envs import ManagerBasedRLEnv
 from omni.isaac.lab.envs import ManagerBasedRLEnvCfg
 
 class HumanoidWalkCfg(ManagerBasedRLEnvCfg):
     """Configuration for humanoid walking task."""
 
+    # highlight-next-line
     # Environment
     num_envs = 4096
     env_spacing = 2.0
@@ -96,6 +113,7 @@ class HumanoidWalkCfg(ManagerBasedRLEnvCfg):
     max_episode_length = 1000  # steps
     dt = 0.02  # 50 Hz control
 
+    # highlight-next-line
     # Reward weights
     rewards = {
         'tracking_linear_vel': 1.0,
@@ -111,13 +129,14 @@ class HumanoidWalkCfg(ManagerBasedRLEnvCfg):
 
 Reward engineering is critical for RL in robotics:
 
-```python
+```python title="humanoid_reward_function" showLineNumbers
 class HumanoidReward:
     """Reward function for humanoid locomotion."""
 
     def compute(self, obs, actions, next_obs):
         rewards = {}
 
+        # highlight-next-line
         # Track commanded velocity
         vel_error = obs['base_linear_vel'][:, 0] - obs['commands'][:, 0]
         rewards['tracking_linear_vel'] = torch.exp(-vel_error ** 2 / 0.25)
@@ -133,6 +152,7 @@ class HumanoidReward:
         rewards['joint_torques'] = -torch.sum(
             next_obs['joint_torques'] ** 2, dim=-1)
 
+        # highlight-next-line
         # Total weighted reward
         total = sum(
             self.weights[k] * v for k, v in rewards.items())
@@ -141,11 +161,12 @@ class HumanoidReward:
 
 ### Termination Conditions
 
-```python
+```python title="termination_conditions" showLineNumbers
 class TerminationConditions:
     def check(self, obs):
         terminated = torch.zeros(self.num_envs, dtype=torch.bool)
 
+        # highlight-next-line
         # Fall detection: base height too low
         terminated |= obs['base_height'] < 0.3
 
@@ -164,7 +185,7 @@ Proximal Policy Optimization (PPO) is the most common algorithm for robot RL.
 
 ### Training Script
 
-```python
+```python title="ppo_training_script" showLineNumbers
 import torch
 from omni.isaac.lab_tasks.utils import parse_env_cfg
 
@@ -175,6 +196,7 @@ def train():
 
     # PPO configuration
     ppo_cfg = {
+        # highlight-next-line
         'learning_rate': 3e-4,
         'gamma': 0.99,
         'gae_lambda': 0.95,
@@ -205,12 +227,13 @@ def train():
                   f'loss={loss:.4f}')
 
     # Save trained policy
+    # highlight-next-line
     torch.save(policy.state_dict(), 'humanoid_walk_policy.pt')
 ```
 
 ### Policy Network Architecture
 
-```python
+```python title="actor_critic_network" showLineNumbers
 import torch
 import torch.nn as nn
 
@@ -232,6 +255,7 @@ class ActorCritic(nn.Module):
 
         self.features = nn.Sequential(*layers)
 
+        # highlight-next-line
         # Actor head (policy)
         self.actor_mean = nn.Linear(prev_dim, act_dim)
         self.actor_log_std = nn.Parameter(
@@ -252,7 +276,7 @@ class ActorCritic(nn.Module):
 
 Curriculum learning gradually increases task difficulty:
 
-```mermaid
+```mermaid title="curriculum_learning_stages"
 flowchart LR
     A[Stage 1<br/>Stand Still] --> B[Stage 2<br/>Walk Slow<br/>0.5 m/s]
     B --> C[Stage 3<br/>Walk Fast<br/>1.5 m/s]
@@ -260,7 +284,7 @@ flowchart LR
     D --> E[Stage 5<br/>Carry Payload]
 ```
 
-```python
+```python title="curriculum_learning_manager" showLineNumbers
 class Curriculum:
     def __init__(self):
         self.stage = 0
@@ -272,6 +296,7 @@ class Curriculum:
             {'max_vel': 1.0, 'terrain': 'rough', 'payload': 2.0},
         ]
 
+    # highlight-next-line
     def update(self, mean_reward, threshold=0.8):
         if mean_reward > threshold and self.stage < len(self.stages) - 1:
             self.stage += 1
@@ -286,34 +311,40 @@ Randomize simulation parameters to improve real-world transfer:
 | Parameter | Range | Purpose |
 |-----------|-------|---------|
 | Friction | 0.5 - 1.5 | Ground surface variation |
-| Mass | ±15% | Payload uncertainty |
-| Motor strength | ±10% | Actuator variation |
-| Observation noise | ±5% | Sensor noise |
+| Mass | +/-15% | Payload uncertainty |
+| Motor strength | +/-10% | Actuator variation |
+| Observation noise | +/-5% | Sensor noise |
 | Push force | 0 - 50N | External disturbances |
 | Terrain roughness | 0 - 5cm | Surface irregularities |
 
 ## Monitoring Training
 
-```bash
+```bash title="monitor_rl_training" showLineNumbers
 # Launch TensorBoard
 tensorboard --logdir=runs/
 
 # Key metrics to watch:
 # - Mean episode reward (should increase)
 # - Episode length (should increase for locomotion)
+# highlight-next-line
 # - Policy loss (should decrease then stabilize)
 # - Value loss (should decrease)
 # - Entropy (should decrease slowly)
 ```
 
+:::tip[Training Diagnostics]
+If your reward curve plateaus early, try adjusting the reward weights or introducing curriculum learning. If training is unstable (reward oscillates), reduce the learning rate or increase the PPO clip range. Monitor the entropy metric -- if it drops to near zero too quickly, the policy has collapsed to a single behavior.
+:::
+
 ## Deploying Trained Policies
 
-```python
+```python title="policy_deployment_node" showLineNumbers
 class PolicyDeployer(Node):
     """Deploy a trained RL policy on the real robot."""
 
     def __init__(self):
         super().__init__('policy_deployer')
+        # highlight-next-line
         self.policy = ActorCritic(obs_dim=68, act_dim=28)
         self.policy.load_state_dict(
             torch.load('humanoid_walk_policy.pt'))
@@ -334,6 +365,15 @@ class PolicyDeployer(Node):
         # Publish joint position targets
         self.publish_joint_commands(action_mean.numpy())
 ```
+
+:::tip[Key Takeaways]
+- GPU-accelerated parallel environments provide 3,000x+ speedup over single-CPU training
+- PPO is the standard algorithm for robot RL due to its stability and sample efficiency
+- Reward design requires balancing task objectives (velocity tracking) with penalties (energy, stability)
+- Curriculum learning progressively increases difficulty to train robust policies
+- Domain randomization during training improves policy transfer to real hardware
+- Always monitor training metrics via TensorBoard to diagnose convergence issues
+:::
 
 ## Next Steps
 

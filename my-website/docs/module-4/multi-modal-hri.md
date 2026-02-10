@@ -13,7 +13,20 @@ learning_objectives:
   - "Create natural feedback mechanisms for robot communication"
 ---
 
-# Multi-Modal Human-Robot Interaction
+**Estimated Time**: 45 minutes
+
+:::info[What You'll Learn]
+- Design multi-modal interaction pipelines for humanoid robots
+- Implement gesture recognition for robot command
+- Combine speech, gesture, and gaze for intent understanding
+- Create natural feedback mechanisms for robot communication
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Voice-to-Action Pipeline](./voice-to-action.md)
+- [LLM-Powered Cognitive Planning](./cognitive-planning.md)
+:::
 
 For humanoid robots to work alongside humans, they need natural interaction capabilities. Multi-modal HRI combines speech, gesture, gaze, and physical interaction into a coherent communication system.
 
@@ -45,7 +58,7 @@ flowchart TB
 
 ### Natural Language Understanding
 
-```python
+```python title="speech_interface_node.py" showLineNumbers
 class SpeechInterface(Node):
     """Bi-directional speech for human-robot interaction."""
 
@@ -65,6 +78,7 @@ class SpeechInterface(Node):
         text = self.transcribe(msg.data)
         if text:
             self.get_logger().info(f'Heard: "{text}"')
+            # highlight-next-line
             # Classify intent
             intent = self.classify_intent(text)
             self.intent_pub.publish(String(data=json.dumps({
@@ -100,7 +114,7 @@ class SpeechInterface(Node):
 
 ### Dialogue Management
 
-```python
+```python title="dialogue_manager.py" showLineNumbers
 class DialogueManager:
     """Manage conversation context and turn-taking."""
 
@@ -111,6 +125,7 @@ class DialogueManager:
     def process_turn(self, user_input):
         self.history.append({'role': 'user', 'text': user_input})
 
+        # highlight-next-line
         # Check for clarification need
         if self.needs_clarification(user_input):
             response = self.ask_clarification(user_input)
@@ -140,7 +155,7 @@ class DialogueManager:
 
 ### Body Pose Estimation
 
-```python
+```python title="gesture_recognizer_node.py" showLineNumbers
 class GestureRecognizer(Node):
     """Recognize human gestures from camera input."""
 
@@ -177,6 +192,7 @@ class GestureRecognizer(Node):
         right_elbow = keypoints[14]
         right_shoulder = keypoints[12]
 
+        # highlight-next-line
         # Pointing: arm extended, wrist far from shoulder
         arm_length = np.linalg.norm(right_wrist - right_shoulder)
         if arm_length > 0.6:  # Normalized
@@ -193,7 +209,7 @@ class GestureRecognizer(Node):
 
 ### Pointing Resolution
 
-```python
+```python title="pointing_resolver_node.py" showLineNumbers
 class PointingResolver(Node):
     """Determine what the user is pointing at."""
 
@@ -210,6 +226,7 @@ class PointingResolver(Node):
         gesture_data = json.loads(msg.data)
         if gesture_data['gesture'] == 'pointing':
             keypoints = gesture_data['keypoints']
+            # highlight-next-line
             # Cast ray from hand in pointing direction
             ray = self.compute_pointing_ray(keypoints)
             # Find object closest to ray
@@ -221,9 +238,13 @@ class PointingResolver(Node):
 
 ## Multi-Modal Fusion
 
+:::info[Why Multi-Modal Fusion?]
+Humans naturally combine speech and gesture when communicating. Saying "pick up that" while pointing is ambiguous in either modality alone. Multi-modal fusion resolves these references by combining information from speech, gesture, and gaze within a short time window.
+:::
+
 ### Intent Fusion
 
-```python
+```python title="multimodal_fusion_node.py" showLineNumbers
 class MultiModalFusion(Node):
     """Fuse speech, gesture, and gaze into unified intent."""
 
@@ -241,6 +262,7 @@ class MultiModalFusion(Node):
         self.recent_speech = None
         self.recent_gesture = None
         self.recent_gaze = None
+        # highlight-next-line
         self.fusion_window = 2.0  # seconds
 
     def fuse(self):
@@ -262,6 +284,7 @@ class MultiModalFusion(Node):
         if self.recent_gaze and self.is_recent(self.recent_gaze):
             intent['gaze_target'] = self.recent_gaze['target']
 
+        # highlight-next-line
         # Resolve: "pick up that" + pointing = pick(pointed_object)
         if intent.get('action') == 'pick' and 'target_direction' in intent:
             intent['target'] = self.resolve_reference(
@@ -274,7 +297,7 @@ class MultiModalFusion(Node):
 
 ### Visual Feedback
 
-```python
+```python title="robot_feedback_node.py" showLineNumbers
 class RobotFeedback(Node):
     """Provide feedback to humans through multiple channels."""
 
@@ -287,6 +310,7 @@ class RobotFeedback(Node):
         self.publish_gaze_target('user_face')
         # Nod head
         self.publish_head_gesture('nod')
+        # highlight-next-line
         # Verbal confirmation
         self.speak(f"I'll {intent['action']} the {intent.get('target', 'object')}")
         # Status indicator
@@ -315,10 +339,11 @@ class RobotFeedback(Node):
 
 ### Personal Space
 
-```python
+```python title="proxemics_controller.py" showLineNumbers
 class ProxemicsController:
     """Maintain appropriate distance from humans."""
 
+    # highlight-next-line
     # Hall's proxemic zones (meters)
     INTIMATE = 0.45
     PERSONAL = 1.2
@@ -335,6 +360,10 @@ class ProxemicsController:
         else:
             return self.SOCIAL          # Default social
 ```
+
+:::tip[Proxemic Zones]
+Edward T. Hall's proxemic zones define comfortable interaction distances. Robots that violate personal space (< 1.2 m) without a task-related reason (like handoff) are perceived as threatening. Always default to the social zone (1.2-3.6 m) unless actively handing objects or conversing.
+:::
 
 ## Interaction Pipeline Summary
 
@@ -357,6 +386,14 @@ sequenceDiagram
     Robot->>Human: Reaches for bottle
     Robot->>Human: "Got it!"
 ```
+
+:::tip[Key Takeaways]
+- Multi-modal HRI combines speech, gesture, gaze, and touch for robust intent understanding
+- Temporal fusion within a 2-second window aligns signals from different modalities
+- Dialogue management handles ambiguous references by asking clarification questions
+- Proxemic zones define appropriate robot-human distances for different interaction types
+- Visual and verbal feedback keeps humans informed of robot state and progress
+:::
 
 ## Next Steps
 
