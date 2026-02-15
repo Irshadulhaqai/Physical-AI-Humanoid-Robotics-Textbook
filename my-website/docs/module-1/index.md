@@ -36,7 +36,7 @@ No prerequisites — you can start here.
 | 1.2 | [Core Concepts](./core-concepts.md) | 45 min |
 | 1.3 | [Building Packages](./building-packages.md) | 40 min |
 | 1.4 | [Python Agents](./python-agents.md) | 50 min |
-| 1.5 | [URDF Basics](./urdf-basics.md) | 45 min |
+| 1.5 | [URDF Basics](./urdf-basics.md) | 60 min |
 | 1.6 | [Exercises](./exercises.md) | 90 min |
 
 ## Key Concepts
