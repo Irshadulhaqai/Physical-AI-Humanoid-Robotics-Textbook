@@ -11,11 +11,11 @@ const config: Config = {
     v4: true,
   },
 
-  url: 'https://irshad-ai.github.io',
-  baseUrl: '/hackathon-Book2026/',
+  url: 'https://Irshadulhaqai.github.io',
+  baseUrl: '/Physical-AI-Humanoid-Robotics-Textbook/',
 
-  organizationName: 'irshad-ai',
-  projectName: 'hackathon-Book2026',
+  organizationName: 'Irshadulhaqai',
+  projectName: 'Physical-AI-Humanoid-Robotics-Textbook',
 
   onBrokenLinks: 'throw',
 
@@ -36,7 +36,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/irshad-ai/hackathon-Book2026/tree/main/my-website/',
+          editUrl: 'https://github.com/Irshadulhaqai/Physical-AI-Humanoid-Robotics-Textbook/tree/main/my-website/',
         },
         blog: false,
         theme: {
@@ -92,7 +92,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://github.com/irshad-ai/hackathon-Book2026',
+          href: 'https://github.com/Irshadulhaqai/Physical-AI-Humanoid-Robotics-Textbook',
           label: 'GitHub',
           position: 'right',
         },
