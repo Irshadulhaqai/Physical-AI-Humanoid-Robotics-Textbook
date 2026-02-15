@@ -208,3 +208,13 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+
+## Active Technologies
+- TypeScript 5.x (Docusaurus config), MDX (content) + Docusaurus 3.x, React 18.x, @docusaurus/preset-classic, @easyops-cn/docusaurus-search-local, @docusaurus/theme-mermaid (001-book-master-plan)
+- Static files (Markdown/MDX), no database (001-book-master-plan)
+- TypeScript 5.6 (Docusaurus config + plugin), MDX/Markdown (content) + Docusaurus 3.9.2, React 19.x, @docusaurus/preset-classic 3.9.2, @docusaurus/theme-mermaid 3.9.2, @easyops-cn/docusaurus-search-local 0.52.3, AJV 8.x (new — frontmatter validation) (002-chapter-template-system)
+- Python 3.12 (code examples), Markdown/MDX (content), TypeScript 5.6 (Docusaurus config) + Docusaurus 3.9.2, @docusaurus/theme-mermaid 3.9.2, @docusaurus/preset-classic 3.9.2, AJV 8.x (frontmatter validation) (004-module1-ros2-chapters)
+- Static files (Markdown), no database (004-module1-ros2-chapters)
+
+## Recent Changes
+- 001-book-master-plan: Added TypeScript 5.x (Docusaurus config), MDX (content) + Docusaurus 3.x, React 18.x, @docusaurus/preset-classic, @easyops-cn/docusaurus-search-local, @docusaurus/theme-mermaid

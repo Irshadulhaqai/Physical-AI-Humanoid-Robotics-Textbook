@@ -13,7 +13,19 @@ learning_objectives:
   - "Debug common conversion issues"
 ---
 
-# URDF to SDF Conversion
+**Estimated Time**: 35 minutes
+
+:::info[What You'll Learn]
+- Compare URDF and SDF formats and their capabilities
+- Convert URDF models to SDF for Gazebo simulation
+- Add Gazebo-specific plugins and properties to robot models
+- Debug common conversion issues
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Gazebo Setup](./gazebo-setup.md)
+:::
 
 URDF (Unified Robot Description Format) is the ROS standard for robot models, while SDF (Simulation Description Format) is Gazebo's native format with richer simulation features. Understanding both formats and how to convert between them is essential for robot simulation.
 
@@ -30,7 +42,7 @@ URDF (Unified Robot Description Format) is the ROS standard for robot models, wh
 
 ## SDF Structure
 
-```xml
+```xml title="world.sdf" showLineNumbers
 <?xml version="1.0"?>
 <sdf version="1.9">
   <world name="default">
@@ -51,6 +63,7 @@ URDF (Unified Robot Description Format) is the ROS standard for robot models, wh
     </include>
 
     <!-- Your robot -->
+    <!-- highlight-next-line -->
     <include>
       <uri>model://my_robot</uri>
       <pose>0 0 0.5 0 0 0</pose>
@@ -63,8 +76,7 @@ URDF (Unified Robot Description Format) is the ROS standard for robot models, wh
 
 Gazebo automatically converts URDF to SDF when loading models through ROS.
 
-```python
-# launch/gazebo.launch.py
+```python title="launch/gazebo.launch.py" showLineNumbers
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -86,6 +98,7 @@ def generate_launch_description():
                 'robot_description': Command(['xacro ', urdf_file])
             }]),
 
+        # highlight-next-line
         # Spawn robot in Gazebo
         Node(
             package='ros_gz_sim',
@@ -100,7 +113,7 @@ def generate_launch_description():
 
 ### Manual Conversion
 
-```bash
+```bash title="Manual URDF to SDF conversion"
 # Convert URDF to SDF manually
 gz sdf -p my_robot.urdf > my_robot.sdf
 
@@ -114,8 +127,9 @@ Use the `<gazebo>` extension tags in URDF for simulation-specific properties.
 
 ### Surface Properties
 
-```xml
+```xml title="Wheel friction properties"
 <!-- Friction and contact properties -->
+<!-- highlight-next-line -->
 <gazebo reference="wheel_link">
   <mu1>1.0</mu1>
   <mu2>1.0</mu2>
@@ -127,9 +141,10 @@ Use the `<gazebo>` extension tags in URDF for simulation-specific properties.
 
 ### Sensor Plugins
 
-```xml
+```xml title="Camera and LiDAR sensor plugins" showLineNumbers
 <!-- Camera sensor -->
 <gazebo reference="camera_link">
+  <!-- highlight-next-line -->
   <sensor name="camera" type="camera">
     <always_on>true</always_on>
     <update_rate>30.0</update_rate>
@@ -158,6 +173,7 @@ Use the `<gazebo>` extension tags in URDF for simulation-specific properties.
 
 <!-- LiDAR sensor -->
 <gazebo reference="lidar_link">
+  <!-- highlight-next-line -->
   <sensor name="lidar" type="ray">
     <always_on>true</always_on>
     <update_rate>10.0</update_rate>
@@ -188,10 +204,15 @@ Use the `<gazebo>` extension tags in URDF for simulation-specific properties.
 </gazebo>
 ```
 
+:::tip[Pro Tip]
+Define sensor plugins in the URDF using `<gazebo>` extension tags rather than a separate SDF file. This keeps the robot description self-contained and automatically converts during launch.
+:::
+
 ### Differential Drive Plugin
 
-```xml
+```xml title="Differential drive controller" showLineNumbers
 <gazebo>
+  <!-- highlight-next-line -->
   <plugin name="diff_drive"
           filename="libgazebo_ros_diff_drive.so">
     <ros>
@@ -217,9 +238,9 @@ Use the `<gazebo>` extension tags in URDF for simulation-specific properties.
 
 SDF requires inertial properties for all non-fixed links.
 
-```xml
-<!-- Fix: Add inertial to every non-fixed link -->
+```xml title="Fix: Add inertial to every non-fixed link"
 <link name="sensor_link">
+  <!-- highlight-next-line -->
   <inertial>
     <mass value="0.1"/>
     <inertia ixx="0.0001" ixy="0" ixz="0"
@@ -228,12 +249,15 @@ SDF requires inertial properties for all non-fixed links.
 </link>
 ```
 
+:::warning[Common Mistake]
+Missing `<inertial>` properties cause the robot to behave erratically in Gazebo — links may fly away or vibrate. Always include mass and inertia for every non-fixed link.
+:::
+
 ### Collision Without Visual
 
 Gazebo requires collision geometry for physics interaction.
 
-```xml
-<!-- Fix: Always include collision geometry -->
+```xml title="Fix: Always include collision geometry"
 <link name="my_link">
   <visual><!-- ... --></visual>
   <collision>
@@ -246,7 +270,7 @@ Gazebo requires collision geometry for physics interaction.
 
 ### Mesh Path Resolution
 
-```xml
+```xml title="URI format differences"
 <!-- URDF uses package:// URI -->
 <mesh filename="package://my_robot/meshes/body.stl"/>
 
@@ -265,6 +289,15 @@ flowchart LR
     E -->|gz sim| D
 ```
 
+:::tip[Key Takeaways]
+- URDF is the ROS standard for robot descriptions; SDF is Gazebo's native format with richer features
+- Gazebo automatically converts URDF to SDF when spawning via `ros_gz_sim create`
+- Use `<gazebo>` extension tags in URDF for simulation-specific properties (friction, sensors, controllers)
+- Always include `<inertial>` and `<collision>` for every non-fixed link
+- The differential drive plugin enables mobile robot control via `/cmd_vel`
+:::
+
 ## Next Steps
 
-Continue to [Physics Simulation](./physics-sim.md) to learn how Gazebo's physics engines simulate real-world dynamics.
+- [Physics Simulation](./physics-sim.md) — configure physics engines for realistic robot dynamics
+- [Sensors](./sensors.md) — simulate cameras, LiDAR, and IMU sensors

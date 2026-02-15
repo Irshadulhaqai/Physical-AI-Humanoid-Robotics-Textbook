@@ -1,12 +1,28 @@
 ---
 sidebar_position: 3
-title: Resources
-sidebar_label: Resources
-description: External links and additional learning materials for Physical AI development.
+title: "Resources"
+sidebar_label: "Resources"
+description: "External links and additional learning materials for Physical AI development including official documentation, research papers, and community forums."
 keywords: [resources, links, documentation, tutorials, learning]
+estimated_time: "10 minutes"
+prerequisites: []
+learning_objectives:
+  - "Find official documentation for ROS 2, Isaac Sim, and Gazebo"
+  - "Access research papers on Physical AI and humanoid robotics"
+  - "Join community forums for support and collaboration"
 ---
 
-# Resources
+**Estimated Time**: 10 minutes
+
+:::info[What You'll Learn]
+- Find official documentation for ROS 2, Isaac Sim, and Gazebo
+- Access research papers on Physical AI and humanoid robotics
+- Join community forums for support and collaboration
+:::
+
+:::note[Prerequisites]
+No prerequisites -- use this page as a reference throughout the course.
+:::
 
 Curated external resources to supplement your learning.
 
@@ -46,3 +62,9 @@ Curated external resources to supplement your learning.
 - [ROS Discord](https://discord.gg/ros)
 - [Robotics Stack Exchange](https://robotics.stackexchange.com/)
 - [r/robotics](https://www.reddit.com/r/robotics/)
+
+:::tip[Key Takeaways]
+- Official ROS 2 and NVIDIA documentation should be your first stop for API questions
+- Research papers provide the theoretical foundation for techniques used in this course
+- Community forums (ROS Discourse, Stack Exchange) are excellent for troubleshooting
+:::

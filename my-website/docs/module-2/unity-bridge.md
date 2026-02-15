@@ -13,7 +13,19 @@ learning_objectives:
   - "Compare Unity and Gazebo simulation capabilities"
 ---
 
-# ROS-Unity Integration
+**Estimated Time**: 35 minutes
+
+:::info[What You'll Learn]
+- Understand the ROS-Unity integration architecture
+- Set up bidirectional communication between ROS 2 and Unity
+- Generate synthetic training data using Unity
+- Compare Unity and Gazebo simulation capabilities
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Gazebo Setup](./gazebo-setup.md)
+:::
 
 Unity is a powerful rendering engine that complements Gazebo's physics simulation. The ROS-Unity bridge enables high-fidelity visualization, synthetic data generation, and human-robot interaction scenarios.
 
@@ -55,8 +67,7 @@ The ROS TCP Connector is the primary bridge between ROS 2 and Unity.
 
 ### Unity Side Setup
 
-```csharp
-// Unity C# - ROS Connection
+```csharp title="RobotController.cs" showLineNumbers
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Geometry;
 
@@ -66,6 +77,7 @@ public class RobotController : MonoBehaviour
 
     void Start()
     {
+        // highlight-next-line
         ros = ROSConnection.GetOrCreateInstance();
         ros.Subscribe<TwistMsg>("/cmd_vel", OnVelocityReceived);
     }
@@ -83,17 +95,18 @@ public class RobotController : MonoBehaviour
 
 ### ROS 2 Side
 
-```bash
+```bash title="Launch ROS TCP endpoint"
 # Install ROS TCP Endpoint
 sudo apt install ros-jazzy-ros-tcp-endpoint
 
 # Launch the endpoint
+# highlight-next-line
 ros2 launch ros_tcp_endpoint endpoint.launch.py
 ```
 
 ### Publishing from Unity to ROS
 
-```csharp
+```csharp title="CameraPublisher.cs" showLineNumbers
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Sensor;
 
@@ -106,6 +119,7 @@ public class CameraPublisher : MonoBehaviour
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
+        // highlight-next-line
         ros.RegisterPublisher<ImageMsg>(topicName);
         sensorCamera = GetComponent<Camera>();
     }
@@ -136,7 +150,7 @@ Unity's rendering pipeline enables high-quality synthetic data for training perc
 
 Vary visual properties to improve model robustness:
 
-```csharp
+```csharp title="DomainRandomizer.cs" showLineNumbers
 public class DomainRandomizer : MonoBehaviour
 {
     public Light[] lights;
@@ -145,6 +159,7 @@ public class DomainRandomizer : MonoBehaviour
 
     public void Randomize()
     {
+        // highlight-next-line
         // Randomize lighting
         foreach (var light in lights)
         {
@@ -170,6 +185,10 @@ public class DomainRandomizer : MonoBehaviour
 }
 ```
 
+:::info[Key Insight]
+Domain randomization trains perception models on varied visual conditions (lighting, textures, object positions) so they generalize better to real-world environments where conditions are never identical to training data.
+:::
+
 ### Perception Package
 
 Unity's Perception package generates labeled datasets:
@@ -184,8 +203,6 @@ Unity's Perception package generates labeled datasets:
 
 ### 1. Digital Twin Visualization
 
-Render the robot's state from ROS 2 in a photorealistic Unity environment:
-
 ```mermaid
 flowchart LR
     A[Physical Robot] -->|Sensor Data| B[ROS 2]
@@ -194,8 +211,6 @@ flowchart LR
 ```
 
 ### 2. VR Teleoperation
-
-Control a robot through a VR interface:
 
 ```mermaid
 flowchart LR
@@ -208,8 +223,6 @@ flowchart LR
 ```
 
 ### 3. Training Data Pipeline
-
-Generate labeled datasets for perception models:
 
 ```mermaid
 flowchart LR
@@ -240,6 +253,18 @@ flowchart LR
 - **Message types**: Not all ROS 2 message types are supported out of the box
 - **Build complexity**: Requires managing both ROS 2 and Unity projects
 
+:::warning[Common Mistake]
+Do not run physics simulation in both Gazebo and Unity simultaneously for the same robot — their physics engines will produce conflicting results. Use Gazebo for physics and Unity for visualization/data generation.
+:::
+
+:::tip[Key Takeaways]
+- Unity complements Gazebo by providing photorealistic rendering and synthetic data generation
+- The ROS TCP Connector bridges bidirectional communication between ROS 2 and Unity
+- Domain randomization in Unity improves perception model robustness for sim-to-real transfer
+- Use Gazebo for physics-accurate simulation and Unity for visualization, VR, and training data
+- The Perception package automates labeled dataset generation for object detection and segmentation
+:::
+
 ## Next Steps
 
-Practice what you've learned in the [Module 2 Exercises](./exercises.md) with hands-on simulation challenges.
+- [Module 2 Exercises](./exercises.md) — practice simulation integration hands-on

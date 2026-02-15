@@ -2,7 +2,7 @@
 sidebar_position: 7
 title: "Assessments and Evaluation"
 sidebar_label: "Assessments"
-description: "Assessment rubrics, evaluation criteria, and submission guidelines for the Physical AI & Humanoid Robotics course including module quizzes and capstone project."
+description: "Assessment rubrics, evaluation criteria, and submission guidelines for the Physical AI and Humanoid Robotics course including module quizzes and capstone project."
 keywords: [assessment, rubric, evaluation, grading, capstone, submission]
 estimated_time: "20 minutes"
 prerequisites: []
@@ -12,7 +12,17 @@ learning_objectives:
   - "Prepare submissions that meet quality standards"
 ---
 
-# Assessments and Evaluation
+**Estimated Time**: 20 minutes
+
+:::info[What You'll Learn]
+- Understand the assessment structure for the course
+- Review the capstone project rubric and grading criteria
+- Prepare submissions that meet quality standards
+:::
+
+:::note[Prerequisites]
+No prerequisites — you can start here.
+:::
 
 This page outlines the assessment structure for the Physical AI & Humanoid Robotics course, including module-level checkpoints and the capstone project evaluation.
 
@@ -40,7 +50,7 @@ Each module exercise set is graded on:
 
 ### Submission Format
 
-```
+```text title="submission_directory_structure"
 module-X-exercises/
 ├── README.md              # Overview of completed exercises
 ├── exercise_1/
@@ -125,11 +135,15 @@ module-X-exercises/
 | Documentation | 4 | README, architecture diagram, setup instructions |
 | Presentation | 3 | Live demo or video, clear explanation of design decisions |
 
+:::info[Grading Breakdown]
+Component scores (70 points) test individual subsystem quality, integration scores (15 points) test end-to-end functionality, and quality scores (15 points) evaluate engineering practices. Aim for strong integration scores since that is the capstone's primary purpose.
+:::
+
 ## Capstone Submission
 
 ### Required Deliverables
 
-```
+```text title="capstone_project_structure"
 capstone-project/
 ├── README.md                    # Project overview and setup
 ├── docs/
@@ -176,6 +190,10 @@ capstone-project/
 - [ ] Demo video (3-5 minutes) or live demo prepared
 - [ ] Design decisions documented with rationale
 
+:::warning[Submission Deadline]
+Late submissions receive a 10% deduction per day. Ensure your repository is tagged and accessible before the deadline. Test your setup instructions on a clean environment before submitting.
+:::
+
 ## Grading Scale
 
 | Grade | Score | Description |
@@ -192,6 +210,14 @@ capstone-project/
 - Use of AI coding assistants is allowed but must be documented
 - External libraries and packages must be listed in dependencies
 - Collaboration on architecture discussions is encouraged; code sharing is not
+
+:::tip[Key Takeaways]
+- The capstone project is worth 35% of the total grade -- start early
+- Component scores (70 pts) reward individual subsystem quality
+- Integration scores (15 pts) reward end-to-end functionality
+- Quality scores (15 pts) reward clean code, documentation, and presentation
+- Test on a clean environment before final submission
+:::
 
 ## Questions
 

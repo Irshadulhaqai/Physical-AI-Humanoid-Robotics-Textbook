@@ -13,7 +13,22 @@ learning_objectives:
   - "Document design decisions and trade-offs"
 ---
 
-# Capstone Project: Autonomous Humanoid Assistant
+**Estimated Time**: 60 minutes
+
+:::info[What You'll Learn]
+- Design the architecture for a complete humanoid robot system
+- Integrate all five pipeline components into a working system
+- Test the system end-to-end with realistic scenarios
+- Document design decisions and trade-offs
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Voice-to-Action Pipeline](./voice-to-action.md)
+- [LLM-Powered Cognitive Planning](./cognitive-planning.md)
+- [Humanoid Robot Fundamentals](./humanoid-fundamentals.md)
+- [Multi-Modal Human-Robot Interaction](./multi-modal-hri.md)
+:::
 
 The capstone project integrates everything you've learned across all four modules into a complete autonomous humanoid robot system. The robot receives voice commands and autonomously executes multi-step tasks involving navigation, perception, and manipulation.
 
@@ -51,13 +66,14 @@ flowchart TB
 
 Converts spoken commands into structured text for the planner.
 
-```python
+```python title="voice_interface.py" showLineNumbers
 class VoiceInterface:
     """Component 1: Speech recognition and synthesis."""
 
     def listen(self) -> str:
         """Capture and transcribe user speech."""
         audio = self.microphone.capture(duration=5.0)
+        # highlight-next-line
         text = self.whisper.transcribe(audio)
         return text
 
@@ -72,7 +88,7 @@ class VoiceInterface:
 
 Decomposes natural language instructions into executable action sequences.
 
-```python
+```python title="cognitive_planner.py" showLineNumbers
 class CognitivePlanner:
     """Component 2: LLM-based task planning."""
 
@@ -81,6 +97,7 @@ class CognitivePlanner:
         prompt = self.build_prompt(instruction, context)
         response = self.llm.generate(prompt)
         actions = self.parse_actions(response)
+        # highlight-next-line
         validated = self.validate_against_skills(actions)
         return validated
 ```
@@ -91,7 +108,7 @@ class CognitivePlanner:
 
 Moves the robot to target locations using Nav2.
 
-```python
+```python title="navigation_component.py" showLineNumbers
 class NavigationComponent:
     """Component 3: Autonomous navigation."""
 
@@ -100,6 +117,7 @@ class NavigationComponent:
         pose = self.location_database.get(location)
         if pose is None:
             return False
+        # highlight-next-line
         self.navigator.goToPose(pose)
         while not self.navigator.isTaskComplete():
             feedback = self.navigator.getFeedback()
@@ -113,7 +131,7 @@ class NavigationComponent:
 
 Detects and localizes objects in the environment.
 
-```python
+```python title="perception_component.py" showLineNumbers
 class PerceptionComponent:
     """Component 4: Object detection and scene understanding."""
 
@@ -121,6 +139,7 @@ class PerceptionComponent:
         """Locate a specific object in the scene."""
         detections = self.detector.detect(self.get_image())
         for det in detections:
+            # highlight-next-line
             if det.label == object_name:
                 pose_3d = self.estimate_3d_pose(det)
                 return {
@@ -141,7 +160,7 @@ class PerceptionComponent:
 
 Controls the robot's arms and hands for grasping and placing.
 
-```python
+```python title="manipulation_component.py" showLineNumbers
 class ManipulationComponent:
     """Component 5: Arm and hand control."""
 
@@ -152,6 +171,7 @@ class ManipulationComponent:
         self.arm_ik.move_to(pre_grasp)
         # Approach and grasp
         self.arm_ik.move_to(object_pose)
+        # highlight-next-line
         self.gripper.close()
         # Verify
         return self.gripper.has_object()
@@ -166,7 +186,7 @@ class ManipulationComponent:
 
 ## Integration: The Capstone Node
 
-```python
+```python title="capstone_robot_node.py" showLineNumbers
 class CapstoneRobot(Node):
     """Complete autonomous humanoid assistant."""
 
@@ -185,6 +205,7 @@ class CapstoneRobot(Node):
         self.executing = False
 
         # Listen for commands
+        # highlight-next-line
         self.voice_sub = self.create_subscription(
             String, '/voice/command', self.on_command, 10)
         self.get_logger().info('Capstone robot ready!')
@@ -211,6 +232,7 @@ class CapstoneRobot(Node):
 
             if not success:
                 self.voice.speak(f'Step {i+1} failed. Re-planning.')
+                # highlight-next-line
                 # Re-plan from current state
                 remaining = self.planner.replan(
                     original_instruction,
@@ -248,6 +270,10 @@ class CapstoneRobot(Node):
             return False
 ```
 
+:::warning[Recursive Re-Planning]
+The `execute_plan` method calls itself recursively on failure. In production, limit recursion depth to prevent infinite re-planning loops. Add a `max_replans` counter and fail gracefully after 3 attempts.
+:::
+
 ## Example Scenarios
 
 ### Scenario 1: "Bring me the water bottle from the kitchen"
@@ -283,12 +309,12 @@ sequenceDiagram
 
 Expected plan:
 1. `navigate(living_room)`
-2. `look_at(room)` — scan for misplaced items
-3. `pick(mug)` — found mug on coffee table
+2. `look_at(room)` -- scan for misplaced items
+3. `pick(mug)` -- found mug on coffee table
 4. `navigate(kitchen)`
 5. `place(mug, counter)`
 6. `navigate(living_room)`
-7. `pick(book)` — found book on floor
+7. `pick(book)` -- found book on floor
 8. `place(book, bookshelf)`
 9. `say("Living room is clean!")`
 
@@ -325,7 +351,7 @@ Expected plan:
 
 ## ROS 2 Launch File
 
-```python
+```python title="capstone_launch.py" showLineNumbers
 # launch/capstone.launch.py
 from launch import LaunchDescription
 from launch_ros.actions import Node
@@ -341,6 +367,7 @@ def generate_launch_description():
         # Voice
         Node(package='capstone', executable='voice_node',
              name='voice'),
+        # highlight-next-line
         # Planner
         Node(package='capstone', executable='planner_node',
              name='planner'),
@@ -355,7 +382,7 @@ def generate_launch_description():
 
 ## Testing Strategy
 
-```bash
+```bash title="testing_commands"
 # 1. Test individual components
 ros2 launch capstone test_perception.launch.py
 ros2 launch capstone test_navigation.launch.py
@@ -371,6 +398,14 @@ ros2 launch capstone capstone_sim.launch.py
 # 4. Run automated test scenarios
 ros2 launch capstone capstone_test_scenarios.launch.py
 ```
+
+:::tip[Key Takeaways]
+- A complete autonomous humanoid system integrates five core components: voice, planning, navigation, perception, and manipulation
+- The cognitive planner serves as the central coordinator, decomposing instructions and dispatching to skill-specific components
+- Re-planning on failure enables robust task completion even when individual steps fail
+- Test components individually, then in pairs, before full integration testing
+- Document design decisions and trade-offs as part of the deliverables
+:::
 
 ## Next Steps
 

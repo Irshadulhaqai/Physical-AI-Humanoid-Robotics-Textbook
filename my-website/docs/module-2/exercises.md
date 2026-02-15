@@ -13,7 +13,22 @@ learning_objectives:
   - "Build custom worlds for robot testing"
 ---
 
-# Module 2 Exercises: Digital Twin Practice
+**Estimated Time**: 120 minutes
+
+:::info[What You'll Learn]
+- Set up and configure Gazebo simulation environments
+- Create robot models that work in physics simulation
+- Configure and process simulated sensor data
+- Build custom worlds for robot testing
+:::
+
+:::note[Prerequisites]
+Before starting these exercises, complete all Module 2 chapters:
+- [Gazebo Setup](./gazebo-setup.md)
+- [URDF & SDF](./urdf-sdf.md)
+- [Physics Simulation](./physics-sim.md)
+- [Sensors](./sensors.md)
+:::
 
 These exercises guide you through building and testing a complete digital twin of a mobile robot in Gazebo.
 
@@ -25,7 +40,7 @@ These exercises guide you through building and testing a complete digital twin o
 
 1. Create a new SDF world file:
 
-```xml
+```xml title="robot_world.sdf" showLineNumbers
 <?xml version="1.0"?>
 <sdf version="1.9">
   <world name="robot_world">
@@ -36,6 +51,7 @@ These exercises guide you through building and testing a complete digital twin o
 
     <!-- TODO: Add ground plane -->
     <!-- TODO: Add sun light -->
+    <!-- highlight-next-line -->
     <!-- TODO: Add 4 walls forming a 10m x 10m room -->
     <!-- TODO: Add 3 box obstacles at different positions -->
     <!-- TODO: Add a table with objects on it -->
@@ -45,7 +61,7 @@ These exercises guide you through building and testing a complete digital twin o
 
 2. Launch your world:
 
-```bash
+```bash title="Launch the world"
 gz sim robot_world.sdf
 ```
 
@@ -66,7 +82,7 @@ gz sim robot_world.sdf
 
 1. Start with this robot URDF and make it simulation-ready:
 
-```xml
+```xml title="sim_robot.urdf" showLineNumbers
 <?xml version="1.0"?>
 <robot name="sim_robot">
   <!-- Base -->
@@ -76,6 +92,7 @@ gz sim robot_world.sdf
       <material name="blue"><color rgba="0 0 0.8 1"/></material>
     </visual>
     <!-- TODO: Add collision -->
+    <!-- highlight-next-line -->
     <!-- TODO: Add inertial (mass: 5kg) -->
   </link>
 
@@ -104,10 +121,14 @@ gz sim robot_world.sdf
 
 3. Drive it using `ros2 topic pub`:
 
-```bash
+```bash title="Send velocity commands"
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
   "{linear: {x: 0.3}, angular: {z: 0.0}}"
 ```
+
+:::danger[Hardware Safety]
+These exercises use simulated robots only. Never copy velocity commands to a real robot without proper safety checks, emergency stop hardware, and a clear workspace.
+:::
 
 ### Verification Checklist
 
@@ -127,7 +148,7 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
 
 1. Add a camera sensor to the robot URDF:
    - Mounted on top of the base
-   - Resolution: 640×480
+   - Resolution: 640x480
    - Frame rate: 30 Hz
    - FOV: 60 degrees
 
@@ -137,18 +158,14 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
    - 360 samples
    - Update rate: 10 Hz
 
-3. Create a ROS 2 node that:
-   - Subscribes to the camera image
-   - Subscribes to the LiDAR scan
-   - Logs the minimum LiDAR range
-   - Counts camera frames received
+3. Create a ROS 2 node that processes sensor data:
 
-```python
-# exercise_sensor_node.py
+```python title="exercise_sensor_node.py" showLineNumbers
 class SensorExercise(Node):
     def __init__(self):
         super().__init__('sensor_exercise')
         # TODO: Subscribe to /camera/image_raw
+        # highlight-next-line
         # TODO: Subscribe to /scan
         self.frame_count = 0
 
@@ -188,10 +205,10 @@ flowchart LR
 
 | LiDAR Min Range | Action |
 |----------------|--------|
-| > 1.5m | Full speed (0.5 m/s) |
+| &gt; 1.5m | Full speed (0.5 m/s) |
 | 0.8m - 1.5m | Slow down (0.2 m/s) |
 | 0.3m - 0.8m | Turn in place (0.5 rad/s) |
-| < 0.3m | Back up (-0.1 m/s) |
+| &lt; 0.3m | Back up (-0.1 m/s) |
 
 ### Tasks
 
@@ -216,11 +233,11 @@ flowchart LR
 
 1. Create a launch file that spawns two robots:
 
-```python
-# launch/multi_robot.launch.py
+```python title="launch/multi_robot.launch.py" showLineNumbers
 def generate_launch_description():
     # TODO: Spawn robot_1 at position (1, 1, 0)
     # TODO: Spawn robot_2 at position (-1, -1, 0)
+    # highlight-next-line
     # TODO: Each robot has its own namespace
     #   robot_1: /robot_1/cmd_vel, /robot_1/scan
     #   robot_2: /robot_2/cmd_vel, /robot_2/scan
@@ -277,6 +294,13 @@ def generate_launch_description():
 | 5. Multi-Robot | Namespaces, multi-agent simulation |
 | Challenge | Complete system integration |
 
+:::tip[Key Takeaways]
+- Building simulation environments requires both world design (SDF) and robot configuration (URDF + Gazebo plugins)
+- Always add collision, inertial, and friction properties before spawning robots in Gazebo
+- Sensor data processing in ROS 2 follows the same patterns as real hardware — code transfers directly
+- Multi-robot simulation uses ROS 2 namespaces to isolate each robot's topics and services
+:::
+
 ## Next Steps
 
-With simulation mastered, continue to [Module 3: NVIDIA Isaac](/docs/module-3/) to learn GPU-accelerated AI for robotics.
+- [Module 3: NVIDIA Isaac](../module-3/index.md) — GPU-accelerated AI for robotics

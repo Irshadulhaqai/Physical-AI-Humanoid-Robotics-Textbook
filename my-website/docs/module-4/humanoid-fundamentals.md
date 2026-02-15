@@ -13,7 +13,19 @@ learning_objectives:
   - "Apply inverse kinematics for arm and hand control"
 ---
 
-# Humanoid Robot Fundamentals
+**Estimated Time**: 55 minutes
+
+:::info[What You'll Learn]
+- Understand bipedal locomotion principles and gait patterns
+- Implement balance control using ZMP and center of mass
+- Coordinate whole-body motion for manipulation tasks
+- Apply inverse kinematics for arm and hand control
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Voice-to-Action Pipeline](./voice-to-action.md)
+:::
 
 Humanoid robots present unique challenges compared to wheeled or tracked platforms. This chapter covers the foundational concepts of bipedal locomotion, balance, and whole-body coordination that make humanoid robots functional.
 
@@ -101,7 +113,7 @@ flowchart LR
 
 ### Walking Pattern Generation
 
-```python
+```python title="walking_pattern_generator.py" showLineNumbers
 import numpy as np
 
 class WalkingPatternGenerator:
@@ -114,6 +126,7 @@ class WalkingPatternGenerator:
         self.step_height = step_height
         self.cycle_time = cycle_time
 
+    # highlight-next-line
     def generate_footsteps(self, num_steps, start_foot='right'):
         """Generate a sequence of foot placements."""
         footsteps = []
@@ -133,6 +146,7 @@ class WalkingPatternGenerator:
         """Compute foot position during swing phase (0 to 1)."""
         # Horizontal: linear interpolation
         xy = start[:2] + phase * (end[:2] - start[:2])
+        # highlight-next-line
         # Vertical: parabolic arc
         z = self.step_height * 4 * phase * (1 - phase)
         return np.array([xy[0], xy[1], z])
@@ -152,9 +166,13 @@ flowchart TB
     D -->|No| F[Falling!]
 ```
 
+:::warning[Balance is Critical]
+If the ZMP leaves the support polygon, the robot will begin to fall. Always implement safety margins and fall-detection logic. In simulation, test with perturbation forces before deploying on hardware.
+:::
+
 ### Balance Controller
 
-```python
+```python title="balance_controller.py" showLineNumbers
 class BalanceController:
     """ZMP-based balance control for humanoid robots."""
 
@@ -163,6 +181,7 @@ class BalanceController:
         self.com_height = com_height
         self.g = 9.81
 
+    # highlight-next-line
     def compute_zmp(self, com_pos, com_accel):
         """Compute the Zero Moment Point."""
         zmp_x = com_pos[0] - (self.com_height / self.g) * com_accel[0]
@@ -187,11 +206,12 @@ class BalanceController:
 
 The LIPM simplifies humanoid dynamics for real-time control:
 
-```python
+```python title="lipm_model.py" showLineNumbers
 class LIPM:
     """Linear Inverted Pendulum Model for COM trajectory."""
 
     def __init__(self, com_height, gravity=9.81):
+        # highlight-next-line
         self.omega = np.sqrt(gravity / com_height)
 
     def predict_com(self, x0, v0, t):
@@ -207,7 +227,7 @@ class LIPM:
 
 ### Arm IK for Manipulation
 
-```python
+```python title="arm_inverse_kinematics.py" showLineNumbers
 class ArmIK:
     """Inverse kinematics for a 7-DOF robot arm."""
 
@@ -223,6 +243,7 @@ class ArmIK:
         target_position = target_pose[:3]
         target_orientation = target_pose[3:]
 
+        # highlight-next-line
         # Solve IK
         joint_angles = self.chain.inverse_kinematics(
             target_position=target_position,
@@ -238,7 +259,7 @@ class ArmIK:
 
 ### Whole-Body IK
 
-```python
+```python title="whole_body_ik.py" showLineNumbers
 class WholeBodyIK:
     """Coordinate arms, torso, and legs simultaneously."""
 
@@ -251,6 +272,7 @@ class WholeBodyIK:
             {'type': 'balance', 'com_target': com, 'priority': 0},
         ]
         """
+        # highlight-next-line
         # Priority 0: Balance (highest)
         # Priority 1: Primary task (hand positioning)
         # Priority 2: Secondary tasks (gaze, posture)
@@ -264,6 +286,10 @@ class WholeBodyIK:
             q += dq
         return q
 ```
+
+:::info[Whole-Body IK Priority]
+Balance is always assigned the highest priority (priority 0). If manipulation and balance conflict, the solver preserves balance and adjusts the arm task. This prevents the robot from tipping over while reaching for objects.
+:::
 
 ## Manipulation
 
@@ -281,7 +307,7 @@ flowchart LR
 
 ### Grasp Controller
 
-```python
+```python title="grasp_controller.py" showLineNumbers
 class GraspController:
     """Control grasping with force feedback."""
 
@@ -300,6 +326,7 @@ class GraspController:
         self.gripper.set_width(target_width + 0.02)  # Slightly open
         self.gripper.move_to_object()
 
+        # highlight-next-line
         while self.gripper.get_force() < self.max_force * 0.5:
             self.gripper.close_increment(0.001)
 
@@ -327,6 +354,14 @@ flowchart TB
     I --> D
     I --> E
 ```
+
+:::tip[Key Takeaways]
+- Humanoid robots typically have 30-40 degrees of freedom requiring coordinated control
+- Bipedal walking follows a gait cycle alternating between double and single support phases
+- The ZMP must remain within the support polygon for stable locomotion
+- Whole-body IK uses priority-based null-space projection to balance multiple objectives
+- Force-controlled grasping with verification ensures reliable manipulation
+:::
 
 ## Next Steps
 

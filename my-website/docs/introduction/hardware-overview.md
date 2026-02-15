@@ -13,31 +13,42 @@ learning_objectives:
   - "Recognize the relationship between hardware and software architectures"
 ---
 
-# Hardware Overview: Robot Anatomy
+**Estimated Time**: 35 minutes
+
+:::info[What You'll Learn]
+- Identify the major hardware subsystems of a humanoid robot
+- Understand the role of different sensor types in robot perception
+- Compare compute platforms used in modern robotics
+- Recognize the relationship between hardware and software architectures
+:::
+
+:::note[Prerequisites]
+- [What is Physical AI?](./what-is-physical-ai.md) -- foundational understanding of Physical AI concepts
+:::
 
 Understanding robot hardware is essential for writing effective software. This chapter covers the key physical components that make up a humanoid robot system.
 
 ## Robot Subsystems
 
-```mermaid
+```mermaid title="humanoid_robot_subsystems"
 flowchart TB
-    subgraph Sensors["🔍 Sensors (Perception)"]
+    subgraph Sensors["Sensors (Perception)"]
         CAM[Cameras<br/>RGB + Depth]
         LID[LiDAR<br/>3D Point Cloud]
         IMU[IMU<br/>Orientation]
         FT[Force/Torque<br/>Contact Sensing]
     end
-    subgraph Compute["🧠 Compute (Processing)"]
+    subgraph Compute["Compute (Processing)"]
         CPU[CPU<br/>General Processing]
         GPU[GPU<br/>AI Inference]
         MCU[MCU<br/>Real-time Control]
     end
-    subgraph Actuators["⚙️ Actuators (Action)"]
+    subgraph Actuators["Actuators (Action)"]
         MOT[Electric Motors<br/>Joint Movement]
         GRP[Grippers<br/>Manipulation]
         SPK[Speakers<br/>Communication]
     end
-    subgraph Power["🔋 Power"]
+    subgraph Power["Power"]
         BAT[Battery Pack]
         BMS[Battery Management]
         PDU[Power Distribution]
@@ -57,11 +68,11 @@ Cameras provide visual information about the robot's environment.
 | Type | Resolution | Use Case | Example |
 |------|-----------|----------|---------|
 | RGB | 1080p-4K | Object recognition, scene understanding | Intel RealSense |
-| Depth (Stereo) | 640×480-1280×720 | Distance measurement, 3D mapping | ZED 2i |
-| Depth (ToF) | 640×480 | Close-range depth, gesture detection | Azure Kinect |
-| Event | 1280×720 | High-speed motion detection | Prophesee |
+| Depth (Stereo) | 640x480-1280x720 | Distance measurement, 3D mapping | ZED 2i |
+| Depth (ToF) | 640x480 | Close-range depth, gesture detection | Azure Kinect |
+| Event | 1280x720 | High-speed motion detection | Prophesee |
 
-```python
+```python title="camera_subscriber_ros2"
 # Example: Reading camera data in ROS 2
 import rclpy
 from sensor_msgs.msg import Image
@@ -70,12 +81,14 @@ from cv_bridge import CvBridge
 class CameraSubscriber(Node):
     def __init__(self):
         super().__init__('camera_subscriber')
+        # highlight-next-line
         self.subscription = self.create_subscription(
             Image, '/camera/color/image_raw',
             self.image_callback, 10)
         self.bridge = CvBridge()
 
     def image_callback(self, msg):
+        # highlight-next-line
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         # Process image...
 ```
@@ -103,7 +116,7 @@ IMUs measure acceleration and angular velocity, essential for balance and orient
 
 Measure contact forces at joints and end-effectors for safe interaction.
 
-```yaml
+```yaml title="force_torque_data_structure"
 # Example: Force/torque sensor data structure
 force:
   x: 0.0    # Newtons
@@ -135,7 +148,7 @@ Modern robotics AI requires GPU acceleration for:
 - **VLA Inference**: Vision-Language-Action model execution
 - **SLAM**: Real-time simultaneous localization and mapping
 
-```bash
+```bash title="check_gpu_availability"
 # Check GPU availability
 nvidia-smi
 
@@ -146,6 +159,10 @@ nvidia-smi
 # | 0    Orin    On           | 00000001:00:00.0 Off|                  N/A |
 # +-----------------------------------------------------------------------------+
 ```
+
+:::warning[GPU Memory Matters]
+For NVIDIA Isaac Sim and VLA model inference, you need at least 8GB of GPU VRAM. Many perception and planning tasks can run on 4GB, but simulation and large model inference require significantly more. Check your GPU memory with `nvidia-smi` before starting Module 3.
+:::
 
 ### Real-Time Control
 
@@ -189,7 +206,7 @@ Most humanoid robots use brushless DC (BLDC) motors with these configurations:
 
 The connection between hardware and software follows a layered architecture:
 
-```mermaid
+```mermaid title="hardware_software_layers"
 flowchart TB
     A[Application Layer<br/>VLA, Planning, HRI] --> B[Middleware Layer<br/>ROS 2 Jazzy]
     B --> C[Driver Layer<br/>Camera, LiDAR, Motor Drivers]
@@ -202,6 +219,14 @@ flowchart TB
 ```
 
 In this course, you will primarily work at the **Application** and **Middleware** layers, with simulation providing the hardware layer virtually.
+
+:::tip[Key Takeaways]
+- Humanoid robots have four major subsystems: sensors, compute, actuators, and power
+- Camera and LiDAR sensors provide complementary perception capabilities (RGB/depth vs. precise 3D point clouds)
+- GPU-accelerated edge compute (Jetson Orin family) enables on-robot AI inference at 100-275 TOPS
+- The hardware-software interface follows a layered architecture where ROS 2 acts as middleware
+- In this course, simulation replaces the physical hardware layer for safe, repeatable development
+:::
 
 ## Next Steps
 

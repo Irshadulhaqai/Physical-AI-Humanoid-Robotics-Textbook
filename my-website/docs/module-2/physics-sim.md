@@ -13,7 +13,20 @@ learning_objectives:
   - "Manage simulation speed and real-time factors"
 ---
 
-# Physics Simulation in Gazebo
+**Estimated Time**: 40 minutes
+
+:::info[What You'll Learn]
+- Configure physics engine parameters in Gazebo
+- Understand collision detection and contact dynamics
+- Tune friction, damping, and restitution for realistic behavior
+- Manage simulation speed and real-time factors
+:::
+
+:::note[Prerequisites]
+Before starting this chapter, complete:
+- [Gazebo Setup](./gazebo-setup.md)
+- [URDF & SDF](./urdf-sdf.md)
+:::
 
 Gazebo uses physics engines to simulate rigid body dynamics, collisions, and contact forces. Understanding these systems is essential for creating realistic robot simulations.
 
@@ -30,8 +43,9 @@ Gazebo supports multiple physics engines:
 
 ### Configuring the Physics Engine
 
-```xml
+```xml title="Physics engine configuration" showLineNumbers
 <!-- In your SDF world file -->
+<!-- highlight-next-line -->
 <physics type="ode">
   <max_step_size>0.001</max_step_size>
   <real_time_factor>1.0</real_time_factor>
@@ -65,20 +79,25 @@ flowchart LR
 | Parameter | Value | Effect |
 |-----------|-------|--------|
 | `max_step_size` | 0.001 | Physics accuracy (smaller = more accurate, slower) |
-| `real_time_factor` | 1.0 | 1.0 = real-time, 2.0 = 2× speed, 0.5 = half speed |
+| `real_time_factor` | 1.0 | 1.0 = real-time, 2.0 = 2x speed, 0.5 = half speed |
 | `real_time_update_rate` | 1000 | Steps per second attempted |
 
 ### Running Faster Than Real-Time
 
 For reinforcement learning, you often want simulation to run as fast as possible:
 
-```xml
+```xml title="Maximum speed configuration"
 <physics type="ode">
   <max_step_size>0.002</max_step_size>
+  <!-- highlight-next-line -->
   <real_time_factor>0</real_time_factor>  <!-- As fast as possible -->
   <real_time_update_rate>0</real_time_update_rate>
 </physics>
 ```
+
+:::tip[Pro Tip]
+Set `real_time_factor` to 0 for RL training to run simulation as fast as your hardware allows. Combined with headless mode (`gz sim -s`), this can achieve 10-100x real-time speed.
+:::
 
 ## Collision Detection
 
@@ -86,7 +105,7 @@ For reinforcement learning, you often want simulation to run as fast as possible
 
 Use simplified shapes for collision (not visual meshes):
 
-```xml
+```xml title="Simplified collision vs detailed visual" showLineNumbers
 <link name="robot_body">
   <visual>
     <!-- Detailed mesh for appearance -->
@@ -95,6 +114,7 @@ Use simplified shapes for collision (not visual meshes):
     </geometry>
   </visual>
   <collision>
+    <!-- highlight-next-line -->
     <!-- Simple box for physics -->
     <geometry>
       <box><size>0.4 0.3 0.5</size></box>
@@ -105,7 +125,7 @@ Use simplified shapes for collision (not visual meshes):
 
 ### Contact Properties
 
-```xml
+```xml title="Surface contact properties" showLineNumbers
 <collision name="wheel_collision">
   <geometry>
     <cylinder><radius>0.05</radius><length>0.02</length></cylinder>
@@ -113,6 +133,7 @@ Use simplified shapes for collision (not visual meshes):
   <surface>
     <friction>
       <ode>
+        <!-- highlight-next-line -->
         <mu>1.0</mu>      <!-- Primary friction coefficient -->
         <mu2>0.5</mu2>    <!-- Secondary friction coefficient -->
         <slip1>0.0</slip1>
@@ -137,9 +158,10 @@ Use simplified shapes for collision (not visual meshes):
 
 ## Gravity and Environment
 
-```xml
+```xml title="World environment configuration" showLineNumbers
 <world name="default">
   <!-- Earth gravity -->
+  <!-- highlight-next-line -->
   <gravity>0 0 -9.81</gravity>
 
   <!-- Atmosphere for drag effects -->
@@ -159,7 +181,7 @@ Use simplified shapes for collision (not visual meshes):
 
 ### Damping and Friction
 
-```xml
+```xml title="Joint dynamics configuration" showLineNumbers
 <joint name="shoulder" type="revolute">
   <parent>torso</parent>
   <child>upper_arm</child>
@@ -171,8 +193,9 @@ Use simplified shapes for collision (not visual meshes):
       <effort>100</effort>
       <velocity>2.0</velocity>
     </limit>
+    <!-- highlight-next-line -->
     <dynamics>
-      <damping>0.5</damping>     <!-- Viscous friction (Nm·s/rad) -->
+      <damping>0.5</damping>     <!-- Viscous friction (Nm*s/rad) -->
       <friction>0.1</friction>    <!-- Static friction (Nm) -->
       <spring_stiffness>0.0</spring_stiffness>
       <spring_reference>0.0</spring_reference>
@@ -183,13 +206,13 @@ Use simplified shapes for collision (not visual meshes):
 
 ### PID Controllers
 
-```python
-# Controlling joints with effort commands
+```python title="joint_controller.py" showLineNumbers
 from std_msgs.msg import Float64
 
 class JointController(Node):
     def __init__(self):
         super().__init__('joint_controller')
+        # highlight-next-line
         self.publisher = self.create_publisher(
             Float64, '/shoulder_position_controller/command', 10)
 
@@ -211,9 +234,13 @@ class JointController(Node):
 | Joints are loose | No damping | Add `dynamics` to joints |
 | Simulation is slow | Too many polygons in collision | Simplify collision geometry |
 
+:::warning[Common Mistake]
+Using detailed visual meshes as collision geometry is the most common cause of slow simulation. Always use simplified primitive shapes (boxes, cylinders, spheres) for collision, even if the visual mesh is complex.
+:::
+
 ### Visualization Tools
 
-```bash
+```bash title="Gazebo debugging views"
 # View collision geometry in Gazebo
 # Menu > View > Collisions
 
@@ -231,17 +258,27 @@ class JointController(Node):
 
 | Technique | Impact | Trade-off |
 |-----------|--------|-----------|
-| Increase step size | 2-5× faster | Less accurate |
-| Simplify collision meshes | 2-10× faster | Less precise contact |
-| Disable shadows | 1.5× faster | Less realistic visuals |
-| Reduce sensor rates | 1.5× faster | Less data |
-| Use headless mode | 3× faster | No visualization |
+| Increase step size | 2-5x faster | Less accurate |
+| Simplify collision meshes | 2-10x faster | Less precise contact |
+| Disable shadows | 1.5x faster | Less realistic visuals |
+| Reduce sensor rates | 1.5x faster | Less data |
+| Use headless mode | 3x faster | No visualization |
 
-```bash
-# Run Gazebo headless (no GUI) for training
-gz sim -s world.sdf  # Server only, no GUI
+```bash title="Run Gazebo headless for training"
+# Server only, no GUI
+gz sim -s world.sdf
 ```
+
+:::tip[Key Takeaways]
+- ODE is the default and most stable physics engine for general robotics simulation
+- `max_step_size` controls accuracy vs speed — smaller is more accurate but slower
+- Use simplified collision geometry (primitives) instead of detailed meshes for performance
+- Set `real_time_factor` to 0 for maximum speed during RL training
+- Add `<dynamics>` (damping, friction) to joints for stable, realistic behavior
+- Debug with Gazebo's built-in visualization tools (collision, center of mass, contacts)
+:::
 
 ## Next Steps
 
-Continue to [Sensors in Simulation](./sensors.md) to learn how to simulate cameras, LiDAR, IMU, and other sensors in Gazebo.
+- [Sensors](./sensors.md) — simulate cameras, LiDAR, IMU, and other sensors
+- [Module 2 Exercises](./exercises.md) — practice physics simulation hands-on

@@ -13,13 +13,24 @@ learning_objectives:
   - "Apply testing strategies for robot software"
 ---
 
-# Development Workflow for Robotics
+**Estimated Time**: 30 minutes
+
+:::info[What You'll Learn]
+- Describe the simulation-first development workflow
+- Identify the key tools in a robotics development pipeline
+- Understand the sim-to-real transfer process
+- Apply testing strategies for robot software
+:::
+
+:::note[Prerequisites]
+- [What is Physical AI?](./what-is-physical-ai.md) -- foundational understanding of Physical AI concepts
+:::
 
 Modern robotics development follows a simulation-first approach where software is developed, tested, and validated in simulation before deployment to physical hardware.
 
 ## The Simulation-First Pipeline
 
-```mermaid
+```mermaid title="simulation_first_pipeline"
 flowchart LR
     A[Design<br/>URDF/SDF] --> B[Simulate<br/>Gazebo/Isaac]
     B --> C[Train<br/>RL/VLA]
@@ -46,6 +57,10 @@ flowchart LR
 | **Reproducibility** | Exact same conditions for every test run |
 | **Parallelism** | Run hundreds of simulations simultaneously on GPU |
 
+:::info[Simulation Is Not Optional]
+In modern humanoid robotics, simulation-first development is not merely a convenience -- it is a necessity. Training a walking policy on physical hardware would take months and risk destroying the robot. In simulation, the same training completes in hours across thousands of parallel environments.
+:::
+
 ## Development Tools
 
 ### Core Tools Used in This Course
@@ -62,7 +77,7 @@ flowchart LR
 
 ### Development Environment
 
-```bash
+```bash title="ros2_workspace_structure" showLineNumbers
 # Typical robotics workspace structure
 ~/ros2_ws/
 ├── src/
@@ -76,9 +91,10 @@ flowchart LR
 └── log/                         # Build and run logs
 ```
 
-```bash
+```bash title="build_ros2_workspace"
 # Building a ROS 2 workspace
 cd ~/ros2_ws
+# highlight-next-line
 colcon build --symlink-install
 source install/setup.bash
 ```
@@ -89,7 +105,7 @@ source install/setup.bash
 
 Define the robot's physical structure, joints, sensors, and visual appearance.
 
-```xml
+```xml title="simplified_urdf_example" showLineNumbers
 <!-- Simplified URDF example -->
 <robot name="my_humanoid">
   <link name="base_link">
@@ -97,6 +113,7 @@ Define the robot's physical structure, joints, sensors, and visual appearance.
       <geometry><box size="0.3 0.3 0.5"/></geometry>
     </visual>
   </link>
+  <!-- highlight-next-line -->
   <joint name="head_joint" type="revolute">
     <parent link="base_link"/>
     <child link="head_link"/>
@@ -110,7 +127,7 @@ Define the robot's physical structure, joints, sensors, and visual appearance.
 
 Load the robot model into a physics simulator and test behaviors.
 
-```bash
+```bash title="launch_gazebo_simulation" showLineNumbers
 # Launch Gazebo with your robot
 ros2 launch my_robot_bringup gazebo.launch.py
 
@@ -123,7 +140,7 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
 
 Write perception, planning, and control nodes. Test in simulation.
 
-```python
+```python title="obstacle_avoidance_node" showLineNumbers
 # Example: Simple obstacle avoidance node
 class ObstacleAvoider(Node):
     def __init__(self):
@@ -134,11 +151,13 @@ class ObstacleAvoider(Node):
             Twist, '/cmd_vel', 10)
 
     def scan_callback(self, msg):
+        # highlight-next-line
         min_distance = min(msg.ranges)
         twist = Twist()
         if min_distance < 0.5:
             twist.angular.z = 0.5  # Turn away
         else:
+            # highlight-next-line
             twist.linear.x = 0.3   # Move forward
         self.cmd_pub.publish(twist)
 ```
@@ -147,7 +166,7 @@ class ObstacleAvoider(Node):
 
 Use simulation to train policies for locomotion, manipulation, or navigation.
 
-```mermaid
+```mermaid title="reinforcement_learning_loop"
 flowchart LR
     A[Environment<br/>Isaac Sim] --> B[Agent<br/>RL Policy]
     B --> C[Action<br/>Motor Commands]
@@ -160,11 +179,12 @@ flowchart LR
 
 Transfer trained models and tested software to the physical robot.
 
-```bash
+```bash title="deploy_to_physical_robot" showLineNumbers
 # Deploy ROS 2 packages to robot
 ssh robot@192.168.1.100
 cd ~/ros2_ws
 colcon build --packages-select my_robot_bringup
+# highlight-next-line
 ros2 launch my_robot_bringup robot.launch.py
 ```
 
@@ -178,13 +198,14 @@ Collect telemetry data from the physical robot to improve simulation fidelity.
 
 Test individual functions and algorithms in isolation.
 
-```python
+```python title="unit_test_path_planning" showLineNumbers
 # test_planner.py
 def test_path_planning():
     planner = PathPlanner()
     start = Pose(0, 0, 0)
     goal = Pose(5, 5, 0)
     path = planner.plan(start, goal)
+    # highlight-next-line
     assert len(path) > 0
     assert path[-1].distance_to(goal) < 0.1
 ```
@@ -193,7 +214,7 @@ def test_path_planning():
 
 Test ROS 2 node communication and system behavior.
 
-```bash
+```bash title="integration_test_commands"
 # Launch test with simulated hardware
 ros2 launch my_robot_bringup test.launch.py
 ros2 test my_robot_navigation
@@ -203,7 +224,7 @@ ros2 test my_robot_navigation
 
 Run complete scenarios in simulation to validate system behavior.
 
-```bash
+```bash title="automated_simulation_test"
 # Run automated simulation test
 ros2 launch my_robot_bringup simulation_test.launch.py \
   scenario:=pick_and_place \
@@ -216,7 +237,7 @@ Connect real sensors/actuators to simulated environments for partial validation.
 
 ## Version Control Best Practices
 
-```bash
+```bash title="branch_naming_conventions"
 # Branch naming for robotics projects
 feature/perception-pipeline
 feature/nav2-configuration
@@ -224,13 +245,17 @@ fix/lidar-transform
 test/manipulation-scenarios
 ```
 
-```bash
+```bash title="commit_message_convention"
 # Commit message convention
 feat(perception): add YOLOv8 object detection node
 fix(navigation): correct TF frame for lidar
 test(manipulation): add pick-and-place simulation test
 docs(readme): update hardware setup instructions
 ```
+
+:::tip[Version Control for Robots]
+Robotics projects have unique version control challenges: large binary assets (URDF meshes, trained models), hardware-specific configurations, and launch file parameters. Keep large files in Git LFS and use environment variables for hardware-specific settings.
+:::
 
 ## Course Workflow
 
@@ -243,6 +268,14 @@ Throughout this course, you will follow this workflow:
 
 Each module builds on the previous, creating a complete development stack for humanoid robotics.
 
+:::tip[Key Takeaways]
+- Simulation-first development is standard practice: design, simulate, train, test, deploy, monitor
+- The core tool chain includes ROS 2 Jazzy, Gazebo Harmonic, NVIDIA Isaac Sim, Python, and colcon
+- Testing spans four levels: unit tests, integration tests, simulation tests, and hardware-in-the-loop
+- Version control with conventional commits keeps robotics projects maintainable
+- Each course module maps to a stage in the development pipeline
+:::
+
 ## Next Steps
 
-You now have an overview of the complete Physical AI development workflow. Continue to [Module 1: ROS 2 Jazzy](/docs/module-1/) to start building your robotics development environment.
+You now have an overview of the complete Physical AI development workflow. Continue to [Module 1: ROS 2 Jazzy](../module-1/index.md) to start building your robotics development environment.
