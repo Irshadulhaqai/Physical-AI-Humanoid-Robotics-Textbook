@@ -244,4 +244,4 @@ All pull requests MUST pass:
 
 **Runtime Guidance**: Use `CLAUDE.md` for AI assistant behavior and workflow execution. Constitution defines WHAT we build; CLAUDE.md defines HOW we collaborate with AI agents.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-29 | **Last Amended**: 2025-11-29
+**Version**: 1.0.0 | **Ratified**: 2026-2-2 | **Last Amended**: 2026-2-2
